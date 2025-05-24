@@ -1,0 +1,83 @@
+
+#include "EmployeeListPanel.h"
+#include <imgui.h>
+
+EmployeeListPanel::EmployeeListPanel(Database& db) 
+    : Panel("Справочник сотрудников"), db(db) {
+    refresh();
+}
+
+Employee EmployeeListPanel::GetSelEmployee() {
+
+  Employee cur = Employee{0, "", "", 0.0};
+ 
+  if (selectedEmployee < 0) return cur;
+
+
+  cur.id=employees[selectedEmployee].id;
+  cur.name=employees[selectedEmployee].name;
+  cur.position=employees[selectedEmployee].position;
+  cur.salary=employees[selectedEmployee].salary;
+
+  return cur;
+
+}
+
+void EmployeeListPanel::refresh() {
+    employees.clear();
+    // Загружаем данные из БД (упрощенный пример)
+    const char* sql = "SELECT id, name, position, salary FROM Employees;";
+    sqlite3_exec(db.getHandle(), sql, [](void* data, int argc, char** argv, char**) {
+        auto* list = static_cast<std::vector<Employee>*>(data);
+        list->emplace_back(Employee{
+            std::stoi(argv[0]),
+            argv[1],
+            argv[2],
+            std::stod(argv[3])
+        });
+        return 0;
+    }, &employees, nullptr);
+}
+
+void EmployeeListPanel::render() {
+    if (!isOpen) return;
+
+//    ImGui::Begin(name.c_str(), &isOpen);
+
+    ImGui::BeginChild(name.c_str());
+
+
+    // Кнопка "Обновить"
+    if (ImGui::Button("Обновить")) {
+        refresh();
+    }
+
+    // Таблица со списком
+    if (ImGui::BeginTable("Employees", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("ID");
+        ImGui::TableSetupColumn("Имя");
+        ImGui::TableSetupColumn("Должность");
+        ImGui::TableSetupColumn("Зарплата");
+        ImGui::TableHeadersRow();
+
+        for (size_t i = 0; i < employees.size(); ++i) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            if (ImGui::Selectable(std::to_string(employees[i].id).c_str(), selectedEmployee == i)) {
+                selectedEmployee = i;
+            }
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", employees[i].name.c_str());
+            ImGui::TableSetColumnIndex(2);
+            ImGui::Text("%s", employees[i].position.c_str());
+            ImGui::TableSetColumnIndex(3);
+            ImGui::Text("%.2f", employees[i].salary);
+        }
+        ImGui::EndTable();
+    }
+
+//    ImGui::End();
+  
+
+    ImGui::EndChild();
+}
