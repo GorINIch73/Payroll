@@ -1,17 +1,17 @@
 
-#include "GUI.h"
 #include "Database.h"
+#include "GUI.h"
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <iostream>
 
-
 int main() {
     // Инициализация GLFW и OpenGL
     glfwInit();
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Payroll App", nullptr, nullptr);
+    GLFWwindow *window =
+        glfwCreateWindow(1280, 720, "Payroll App", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -33,7 +33,6 @@ int main() {
     // Добавляем Font
     ImFontConfig config;
 
-
     // Инициализация базы данных
     Database db("payroll.db");
     if (!db.open()) {
@@ -41,13 +40,13 @@ int main() {
         return -1;
     }
 
-  // if (!db.createNewDatabase()) {
-  //     std::cerr << "Ошибка создания БД!" << std::endl;
-  //     return -1;
-  // }
-  //
+    // if (!db.createNewDatabase()) {
+    //     std::cerr << "Ошибка создания БД!" << std::endl;
+    //     return -1;
+    // }
+    //
     // Основной GUI
-    GUI gui(db);
+    GUI gui(window, db);
 
     // Главный цикл
     while (!glfwWindowShouldClose(window)) {
@@ -56,7 +55,9 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
+        // ImGui::SetNextWindowPos(ImVec2(0, 0));
+        // ImGui::SetNextWindowSize(io.DisplaySize);
+        //
         gui.render();
 
         ImGui::Render();

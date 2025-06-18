@@ -48,6 +48,8 @@ set(JSON_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/json/include)
 set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/thirdparty/imgui)  # Путь к ImGui
 file(GLOB IMGUI_SOURCES 
     "${IMGUI_DIR}/*.cpp"
+    "${IMGUI_DIR}/misc/cpp/*.cpp"
+
     "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
     "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
 )
@@ -66,8 +68,9 @@ add_executable(Payroll
     src/main.cpp  
     src/Database.cpp  
     src/GUI.cpp  
-    src/EmployeeListPanel.cpp
-    src/EmployeeEditPanel.cpp
+    src/EmployeesPanel.cpp
+    #src/EmployeeListPanel.cpp
+    #src/EmployeeEditPanel.cpp
 
     #    src/Settings.cpp  
     #    src/PdfExporter.cpp  
@@ -103,15 +106,19 @@ target_link_libraries(Payroll PRIVATE
     ${SQLite3_LIBRARY} 
 )
 
-# add_custom_command(
-#     TARGET Payroll  # Имя вашего target (исполняемого файла/библиотеки)
-#     POST_BUILD     # Копировать после сборки
-#     COMMAND ${CMAKE_COMMAND} -E copy
-#         ${CMAKE_CURRENT_SOURCE_DIR}/src/font/*.ttf
-#         ${CMAKE_CURRENT_BINARY_DIR}/
-#     COMMENT "Копирование ресурсов в каталог сборки..."
-# )
-#
+if(WIN32)
+    # хз почему не копирует под винду
+else()
+add_custom_command(
+    TARGET Payroll  # Имя вашего target (исполняемого файла/библиотеки)
+    POST_BUILD     # Копировать после сборки
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/font/*.ttf
+        ${CMAKE_CURRENT_BINARY_DIR}/
+    COMMENT "Копирование ресурсов в каталог сборки..."
+)
+endif()
+
 # Для Windows: копирование DLL GLFW
 if(WIN32)
     find_file(GLFW_DLL

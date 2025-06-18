@@ -1,6 +1,5 @@
-# imgui_Salary
+# Аудит начисления заработной платы
 
-приложение для проверки ЗП
 
 git clone -b docking https://github.com/ocornut/imgui.git  thirdparty/imgui
 git clone https://github.com/aiekick/ImGuiFileDialog.git thirdparty/ImGuiFileDialog
@@ -31,7 +30,7 @@ cmake --build .
 
 некоторые dll нужно положить руками
 
-библиотеку d:\msys64\home\Gor\C_dev\imgui\ds_setup\build\libharu-install\bin\libhpdf.dll нужно с билд руками кинуть подумаю позже
+библиотеку build\libharu-install\bin\libhpdf.dll нужно с билд руками кинуть подумаю позже
 
 для релиза
 cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..

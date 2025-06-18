@@ -1,17 +1,23 @@
-
+#pragma ones
+#include "Database.h"
+#include "EmployeesPanel.h"
+#include <GLFW/glfw3.h>
+#include <imgui.h>
 #include <memory>
 #include <vector>
-#include "EmployeeListPanel.h"
-#include "EmployeeEditPanel.h"
+
+// #include "EmployeeEditPanel.h"
 
 class GUI {
-public:
-    GUI(Database& db);
-    void addEmployeePanel();
-    void render();
+    public:
+        GUI(GLFWwindow *w, Database &base);
 
-private:
-    Database& db;
-    std::vector<std::unique_ptr<Panel>> panels;
-    void showMainMenu();
+        void addEmployeesPanel();
+        void render();
+        void showMainMenu();
+
+    private:
+        GLFWwindow *window;
+        Database &db;
+        std::vector<std::unique_ptr<Panel>> panels;
 };
