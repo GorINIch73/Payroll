@@ -86,6 +86,7 @@ target_include_directories(Payroll  PRIVATE
     ${CMAKE_SOURCE_DIR}/src  #наши заголовкиi
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
+    ${IMGUI_DIR}/misc/cpp
     # ${GLAD_DIR}/include
 
     ${OPENGL_INCLUDE_DIR}    

@@ -1,6 +1,7 @@
 
 #include "Database.h"
 #include "GUI.h"
+#include "Icons.h"
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -30,12 +31,19 @@ int main() {
         io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf", 24.0f, nullptr,
                                      io.Fonts->GetGlyphRangesCyrillic());
 
-    // Добавляем Font
+    // Добавляем иконки
     ImFontConfig config;
+    // Добавляем Font Awesome
+    config.MergeMode = true;
+    config.PixelSnapH = true;
+
+    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
+                                 icons_ranges);
 
     // Инициализация базы данных
-    Database db("payroll.db");
-    if (!db.open()) {
+    Database db;
+    if (!db.open("payroll.db")) {
         std::cerr << "Не удалось открыть БД!" << std::endl;
         return -1;
     }

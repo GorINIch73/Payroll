@@ -17,8 +17,9 @@ class EmployeesPanel : public Panel {
         EmployeesPanel(Database &db);
         void render() override;
         void refresh();
-        bool saveRecord(Employee rec, std::string where);
-        Employee getSelEmployee();
+        bool writeToDatabase();
+        bool addRecord();
+        bool delRecord();
         bool isCurrentChanged();
 
     private:

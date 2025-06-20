@@ -1,29 +1,50 @@
 #include "Database.h"
+#include <cstdio>
 #include <iostream>
 
-Database::Database(const std::string& dbPath) : dbPath(dbPath), db(nullptr) {}
+Database::Database()
+    : db(nullptr) {
 
-bool Database::open() {
-    return sqlite3_open(dbPath.c_str(), &db) == SQLITE_OK;
+    // хз что ту делать
 }
 
-Database::~Database()
-{
-  close();
+bool Database::open(const std::string &Path) {
+    // если была открыта - закрыть
+    close();
+
+    dbPath = Path;
+    // открываем новую
+    int rc = sqlite3_open(dbPath.c_str(), &db);
+    // Проверка на ошибки
+    if (rc != SQLITE_OK || db == nullptr) {
+        std::cerr << "Ошибка открытия базы: "
+                  << (db ? sqlite3_errmsg(db) : "неизвестная ошибка")
+                  << std::endl;
+
+        if (db)
+            sqlite3_close(db);
+        return false;
+    }
+
+    return true;
 }
 
+Database::~Database() { close(); }
 
 void Database::close() {
 
     if (db) {
-        sqlite3_close(db);  // Закрываем соединение с БД
-        db = nullptr;       // Обнуляем указатель
+        sqlite3_close(db); // Закрываем соединение с БД
+        db = nullptr;      // Обнуляем указатель
     }
-
 }
 
-bool Database::execute(const std::string& sql) {
-    char* errMsg = nullptr;
+bool Database::execute(const std::string &sql) {
+
+    if (!db)
+        return false;
+
+    char *errMsg = nullptr;
     int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
         std::cerr << "SQL error: " << errMsg << std::endl;
@@ -34,9 +55,11 @@ bool Database::execute(const std::string& sql) {
 }
 
 bool Database::createNewDatabase() {
-    if (!open()) return false;
 
-    const char* sql = R"(
+    if (!db)
+        return false;
+
+    const char *sql = R"(
         CREATE TABLE IF NOT EXISTS Employees (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -54,15 +77,17 @@ bool Database::createNewDatabase() {
     return execute(sql);
 }
 
-bool Database::tableExists(const std::string& tableName) {
-    std::string sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='" + tableName + "';";
+bool Database::tableExists(const std::string &tableName) {
+    std::string sql =
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='" +
+        tableName + "';";
     bool exists = false;
-    sqlite3_exec(db, sql.c_str(), [](void* data, int, char**, char**) -> int {
-        *static_cast<bool*>(data) = true;
-        return 0;
-    }, &exists, nullptr);
+    sqlite3_exec(
+        db, sql.c_str(),
+        [](void *data, int, char **, char **) -> int {
+            *static_cast<bool *>(data) = true;
+            return 0;
+        },
+        &exists, nullptr);
     return exists;
 }
-
-
-

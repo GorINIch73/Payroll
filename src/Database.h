@@ -4,20 +4,19 @@
 #include <vector>
 
 class Database {
-public:
-    Database(const std::string& dbPath);
-    ~Database();
+    public:
+        Database();
+        ~Database();
 
-    bool open();
-    void close();
-    bool execute(const std::string& sql);
-    bool createNewDatabase();
-    bool tableExists(const std::string& tableName);
-    
-    sqlite3* getHandle() const { return db; }
+        bool open(const std::string &Path);
+        void close();
+        bool execute(const std::string &sql);
+        bool createNewDatabase();
+        bool tableExists(const std::string &tableName);
 
-private:
-    sqlite3* db;
-    std::string dbPath;
+        sqlite3 *getHandle() const { return db; }
+
+    private:
+        sqlite3 *db;
+        std::string dbPath;
 };
-
