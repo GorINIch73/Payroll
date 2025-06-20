@@ -1,4 +1,5 @@
 # Аудит начисления заработной платы
+Пишем и изучаем IMGUI помаленьку
 
 ## настройка зависимостей
 ```bash
@@ -10,11 +11,10 @@ git clone --depth=1 https://github.com/nlohmann/json.git thirdparty/json
 
 ## фонты
 fontawesome-webfont.ttf
+
 NotoSans-Regular.ttf
 
 для фонтов https://fontdrop.info/
-
-
 
 
 ## для MSYS2
@@ -36,6 +36,8 @@ cmake ..
 для MSYS2
 ``` bash
 cmake -G "MinGW Makefiles" ..
+```
+
 ``` bash
 cmake --build . 
 ```
