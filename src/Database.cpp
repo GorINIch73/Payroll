@@ -60,18 +60,79 @@ bool Database::createNewDatabase() {
         return false;
 
     const char *sql = R"(
-        CREATE TABLE IF NOT EXISTS Employees (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            position TEXT,
-            salary REAL
-        );
 
-        CREATE TABLE IF NOT EXISTS PayrollTypes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            coefficient REAL
-        );
+    CREATE TABLE IF NOT EXISTS Individuals (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT
+                          NOT NULL,
+        full_name TEXT,
+        note      TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS Orders (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT
+                               NOT NULL,
+        number         TEXT,
+        date           TEXT    DEFAULT ('2000-01-01'),
+        found          INTEGER DEFAULT (0),
+        protocol_found INTEGER DEFAULT (0) 
+    );
+
+
+    CREATE TABLE IF NOT EXISTS Positions (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT
+                          NOT NULL,
+        job_title TEXT,
+        salary    REAL    DEFAULT (0.0),
+        norm      REAL    DEFAULT (0.0),
+        note      TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS Accruals (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT
+                           NOT NULL,
+        name       TEXT,
+        percentage REAL
+    );
+
+    CREATE TABLE IF NOT EXISTS Employees (
+        id                INTEGER PRIMARY KEY AUTOINCREMENT
+                                  NOT NULL,
+        individual_id     INTEGER REFERENCES Individuals (id) ON DELETE NO ACTION
+                                                              ON UPDATE NO ACTION,
+        position_id       INTEGER REFERENCES Positions (id) ON DELETE NO ACTION
+                                                            ON UPDATE NO ACTION,
+        rate              REAL    DEFAULT (1),
+        contract          TEXT,
+        contract_found    INTEGER DEFAULT (0),
+        certificate_found INTEGER DEFAULT (0),
+        note              TEXT
+    );
+
+
+    CREATE TABLE IF NOT EXISTS Statements (
+        id                 INTEGER PRIMARY KEY AUTOINCREMENT
+                                   NOT NULL,
+        month              INTEGER DEFAULT (1),
+        employee_id        INTEGER REFERENCES Employees (id) 
+                                   NOT NULL,
+        hours_worked       REAL    DEFAULT (0),
+        timesheet_verified INTEGER DEFAULT (0) 
+    );
+
+
+    CREATE TABLE IF NOT EXISTS List_accruals (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT
+                             NOT NULL,
+        statement_id INTEGER NOT NULL
+                             REFERENCES Statements (id),
+        accrual_id   INTEGER NOT NULL
+                             REFERENCES Accruals (id),
+        amount       REAL    DEFAULT (0.0),
+        order_id     INTEGER REFERENCES Orders (id),
+        verified     INTEGER DEFAULT (0),
+        note         TEXT
+    );
+
     )";
 
     return execute(sql);

@@ -1,6 +1,7 @@
 
 #include "GUI.h"
 #include "Database.h"
+#include "IndividualsPanel.h"
 #include <imgui.h>
 #include <iostream>
 
@@ -116,6 +117,14 @@ void GUI::addEmployeesPanel() {
     // panels.push_back(std::move(newEditPanel));
 }
 
+void GUI::addIndividualsPanel() {
+    // Добавляем пнель физлиц
+    auto newPanel = std::make_unique<IndividualsPanel>(db);
+    newPanel->getIsOpen() = true;
+
+    panels.push_back(std::move(newPanel));
+}
+
 void GUI::showMainMenu() {
     if (ImGui::BeginMainMenuBar()) {
 
@@ -146,7 +155,8 @@ void GUI::showMainMenu() {
                 //     }
                 // }
             }
-            if (ImGui::MenuItem("Редактор")) {
+            if (ImGui::MenuItem("Физлица")) {
+                addIndividualsPanel();
             }
             ImGui::EndMenu();
         }
