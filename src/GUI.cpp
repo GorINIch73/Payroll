@@ -1,7 +1,9 @@
 
 #include "GUI.h"
 #include "Database.h"
+#include "EmployeesPanel.h"
 #include "IndividualsPanel.h"
+#include "PositionsPanel.h"
 #include <imgui.h>
 #include <iostream>
 
@@ -27,7 +29,7 @@ void GUI::render() {
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
+    // ImGui::SetNextWindowViewport(viewport->ID);
 
     // ImVec2 parent_size = ImGui::GetWindowSize();
     // ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -117,6 +119,14 @@ void GUI::addEmployeesPanel() {
     // panels.push_back(std::move(newEditPanel));
 }
 
+void GUI::addPositionsPanel() {
+    // Добавляем пнель должностей
+    auto newPanel = std::make_unique<PositionsPanel>(db);
+    newPanel->getIsOpen() = true;
+
+    panels.push_back(std::move(newPanel));
+}
+
 void GUI::addIndividualsPanel() {
     // Добавляем пнель физлиц
     auto newPanel = std::make_unique<IndividualsPanel>(db);
@@ -157,6 +167,9 @@ void GUI::showMainMenu() {
             }
             if (ImGui::MenuItem("Физлица")) {
                 addIndividualsPanel();
+            }
+            if (ImGui::MenuItem("Должности")) {
+                addPositionsPanel();
             }
             ImGui::EndMenu();
         }

@@ -5,15 +5,17 @@
 #include <utility>
 #include <vector>
 
-struct Employee {
+struct Position {
         int id = -1;
-        std::string full_name = "";
+        std::string job_title = "";
+        double salary = 0.0f;
+        double norm = 0.0f;
         std::string note = "";
 };
 
-class EmployeesPanel : public Panel {
+class PositionsPanel : public Panel {
     public:
-        EmployeesPanel(Database &db);
+        PositionsPanel(Database &db);
         void render() override;
         void refresh();
         bool writeToDatabase();
@@ -23,8 +25,8 @@ class EmployeesPanel : public Panel {
 
     private:
         Database &db;
-        std::vector<Employee> individuals;
+        std::vector<Position> positions;
         int selectedIndex = -1;
-        Employee currentRecord;
+        Position currentRecord;
         int oldIndex = -1; // для отслеживание изменения выделенной строки
 };

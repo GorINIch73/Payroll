@@ -1,7 +1,8 @@
 #pragma ones
 #include "Database.h"
-#include "EmployeesPanel.h"
-#include "IndividualsPanel.h"
+// #include "EmployeesPanel.h"
+// #include "IndividualsPanel.h"
+#include "Panel.h"
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <memory>
@@ -15,6 +16,7 @@ class GUI {
 
         void addEmployeesPanel();
         void addIndividualsPanel();
+        void addPositionsPanel();
 
         void render();
         void showMainMenu();
