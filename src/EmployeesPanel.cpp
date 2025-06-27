@@ -15,7 +15,7 @@
 #include <unicode/utf8.h>
 
 EmployeesPanel::EmployeesPanel(Database &db)
-    : Panel("Справочник физлиц"),
+    : Panel("Справочник работников"),
       db(db) {
     refresh();
     // std::cout << "проехали конструктор " << std::endl;
@@ -24,16 +24,33 @@ EmployeesPanel::EmployeesPanel(Database &db)
 bool EmployeesPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
     std::string sql;
+
     if (isCurrentChanged()) {
-        sql = "UPDATE Employees SET full_name='" + currentRecord.full_name +
-              "', note='" + currentRecord.note +
-              "' WHERE id=" + std::to_string(currentRecord.id) + ";";
+        sql =
+            "UPDATE Employees SET " +
+            (currentRecord.individual_id > 0
+                 ? " individual_id=" +
+                       std::to_string(currentRecord.individual_id)
+                 : "") +
+            (currentRecord.position_id > 0
+                 ? ", position_id=" + std::to_string(currentRecord.position_id)
+                 : "") +
+            ", rate=" + std::to_string(currentRecord.rate) + ", contract='" +
+            currentRecord.contract + "', contract_found=" +
+            std::to_string(currentRecord.contract_found ? 1 : 0) +
+            ", certificate_found=" +
+            std::to_string(currentRecord.certificate_found ? 1 : 0) +
+            ", note='" + currentRecord.note +
+            "' WHERE id=" + std::to_string(currentRecord.id) + ";";
 
         // std::cout << currentRecord.note << std::endl;
         // std::cout << sql << std::endl;
+        if (db.execute(sql)) {
 
-        printf("Обновление записи ... \n");
-        return db.execute(sql);
+            // обновляем запись в таблице пока что полным обновлением
+            refresh();
+        };
+        return false;
     }
 
     return false;
@@ -42,7 +59,7 @@ bool EmployeesPanel::writeToDatabase() {
 bool EmployeesPanel::addRecord() {
     // добавление новой записи в базу
     std::string sql;
-    sql = "INSERT INTO Employees (full_name) VALUES ( '');";
+    sql = "INSERT INTO Employees (rate) VALUES (1);";
     return db.execute(sql);
 }
 
@@ -59,19 +76,79 @@ bool EmployeesPanel::delRecord() {
 }
 
 void EmployeesPanel::refresh() {
-    individuals.clear();
+
+    // Основная таблица
+    employees.clear();
+    std::cout << "рефреш ..." << std::endl;
     // Загружаем данные из БД (упрощенный пример)
-    const char *sql = "SELECT id, full_name, note FROM Employees;";
+    // const char *sql = "SELECT id, individual_id, position_id, rate, contract,
+    // "
+    //                   "contract_found, certificate_found, note FROM
+    //                   Employees;";
+    const char *sql = "SELECT e.id, e.individual_id, i.full_name, "
+                      "e.position_id, p.job_title, e.rate, e.contract, "
+                      "e.contract_found, e.certificate_found, e.note FROM "
+                      "Employees e LEFT JOIN Individuals i ON e.individual_id "
+                      "= i.id LEFT JOIN Positions p ON e.position_id = p.id;";
     sqlite3_exec(
         db.getHandle(), sql,
         [](void *data, int argc, char **argv, char **) {
             auto *list = static_cast<std::vector<Employee> *>(data);
             // не забываем проверять текстовые поля на NULL
+
+            // std::cout << "argc " << argc << " 1: " << argv[0]
+            //           << "0: " << argv[1] << " 1: " << argv[1]
+            //           << " 2: " << argv[2] << " 3: " << argv[3] << std::endl;
+            list->emplace_back(Employee{
+                std::stoi(argv[0]),
+                argv[1] ? std::stoi(argv[1]) : -1,
+                argv[2] ? argv[2] : "",
+                argv[3] ? std::stoi(argv[3]) : -1,
+                argv[4] ? argv[4] : "",
+                argv[5] ? std::stod(argv[5]) : 0,
+                argv[6] ? argv[6] : "",
+                argv[7] ? (std::stoi(argv[7]) > 0 ? true : false) : false,
+                argv[8] ? (std::stoi(argv[8]) > 0 ? true : false) : false,
+                argv[9] ? argv[9] : "",
+            });
+            return 0;
+        },
+        &employees, nullptr);
+
+    // std::cout << "рефреш основной " << std::endl;
+    // таблица физлиц
+
+    individuals.clear();
+    const char *sqlF = "SELECT id, full_name "
+                       "FROM Individuals;";
+    sqlite3_exec(
+        db.getHandle(), sqlF,
+        [](void *data, int argc, char **argv, char **) {
+            auto *list = static_cast<std::vector<ListCombo> *>(data);
+            // не забываем проверять текстовые поля на NULL
             list->emplace_back(
-                Employee{std::stoi(argv[0]), argv[1], argv[2] ? argv[2] : ""});
+                ListCombo{std::stoi(argv[0]), argv[1] ? argv[1] : ""});
             return 0;
         },
         &individuals, nullptr);
+
+    // std::cout << "рефреш физлиц норм " << std::endl;
+    // таблица должностейш
+    positions.clear();
+    const char *sqlP = "SELECT id, job_title "
+                       "FROM Positions;";
+    sqlite3_exec(
+        db.getHandle(), sqlP,
+        [](void *data, int argc, char **argv, char **) {
+            auto *list = static_cast<std::vector<ListCombo> *>(data);
+            // не забываем проверять текстовые поля на NULL
+            list->emplace_back(
+                ListCombo{std::stoi(argv[0]), argv[1] ? argv[1] : ""});
+            return 0;
+        },
+        &positions, nullptr);
+
+    // std::cout << "рефреш должностей норм" << std::endl;
 }
 
 bool EmployeesPanel::isCurrentChanged() {
@@ -84,12 +161,23 @@ bool EmployeesPanel::isCurrentChanged() {
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << individuals[oldIndex].note << std::endl;
+    // std::cout << " старое :" << employees[oldIndex].note << std::endl;
 
     // срапвниваем поля
-    if (currentRecord.full_name != individuals[oldIndex].full_name)
+    if (currentRecord.individual_id != employees[oldIndex].individual_id)
         return true;
-    if (currentRecord.note != individuals[oldIndex].note)
+    if (currentRecord.position_id != employees[oldIndex].position_id)
+        return true;
+    if (currentRecord.rate != employees[oldIndex].rate)
+        return true;
+    if (currentRecord.contract != employees[oldIndex].contract)
+        return true;
+    if (currentRecord.contract_found != employees[oldIndex].contract_found)
+        return true;
+    if (currentRecord.certificate_found !=
+        employees[oldIndex].certificate_found)
+        return true;
+    if (currentRecord.note != employees[oldIndex].note)
         return true;
 
     return false;
@@ -100,7 +188,8 @@ void EmployeesPanel::render() {
         return;
     // проверка на существование таблицы - вдруг база пауста или не та
     if (!db.tableExists("Employees")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Табилца физлиц отсуствует!");
+        ImGui::TextColored(ImVec4(1, 0, 0, 1),
+                           "Табилца сотрудников отсуствует!");
         return;
     }
 
@@ -132,12 +221,12 @@ void EmployeesPanel::render() {
         addRecord();
         refresh();
         // прыгвем на последнюю запись
-        selectedIndex = individuals.size() - 1;
+        selectedIndex = employees.size() - 1;
         goBottom = true;
         focusFirst = true;
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Добавить новое физлицо");
+        ImGui::SetTooltip("Добавить нового сотрудника");
     }
     ImGui::PopStyleColor();
     ImGui::SameLine();
@@ -202,7 +291,78 @@ void EmployeesPanel::render() {
         focusFirst = false;
     }
 
-    ImGui::InputText("ФИО", &currentRecord.full_name);
+    ImGui::InputInt("ФИО1", &currentRecord.individual_id);
+    ImGui::InputText("ФИО", &currentRecord.individual);
+
+    // static std::vector<std::string> options = {"Вариант A", "Вариант B",
+    // "Вариант C"};
+    // static int selected_index = 0;
+
+    // std::cout << "комбо старт" << std::endl;
+
+    // Находим индекс выбранного элемента
+    size_t current_index = 0;
+    for (; current_index < individuals.size(); ++current_index) {
+        if (individuals[current_index].id == currentRecord.individual_id) {
+            break;
+        }
+    }
+
+    if (ImGui::BeginCombo("Физические лица",
+                          current_index < individuals.size()
+                              ? individuals[current_index].value.c_str()
+                              : "Не выбрано")) {
+        for (size_t i = 0; i < individuals.size(); i++) {
+            bool is_selected =
+                (currentRecord.individual_id == individuals[i].id);
+            if (ImGui::Selectable(individuals[i].value.c_str(), is_selected)) {
+                currentRecord.individual_id = individuals[i].id;
+            }
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    // Находим текущее значение для отображения
+    // auto it = std::find_if(individuals.begin(), individuals.end(),
+    //                        [&](const ListCombo &i) {
+    //                            return i.id == currentRecord.individual_id;
+    //                        });
+    // const char *preview =
+    //     it != individuals.end() ? it->value.c_str() : "Не выбрано";
+    // if (ImGui::BeginCombo("dd", preview)) {
+    //     for (const auto &item : individuals) {
+    //         bool is_selected = (currentRecord.individual_id == item.id);
+    //         if (ImGui::Selectable(item.value.c_str(), is_selected)) {
+    //             currentRecord.individual_id = item.id;
+    //         }
+    //         if (is_selected) {
+    //             ImGui::SetItemDefaultFocus();
+    //         }
+    //     }
+    //
+    //     ImGui::EndCombo();
+    // }
+
+    // if (ImGui::BeginCombo(
+    //         "ФИО3", individuals[currentRecord.individual_id].value.c_str()))
+    //         {
+    //     for (int i = 0; i < individuals.size(); i++) {
+    //         bool is_selected = (currentRecord.individual_id == i);
+    //         if (ImGui::Selectable(individuals[i].value.c_str(), is_selected))
+    //         {
+    //             currentRecord.individual_id = i;
+    //         }
+    //         if (is_selected) {
+    //             ImGui::SetItemDefaultFocus();
+    //         }
+    //     }
+    //     ImGui::EndCombo();
+    // }
+
+    // std::cout << "комбо енд" << std::endl;
     // ImGui::InputText("Примечание", &currentRecord.note);
 
     // мультистрочник - морока прям
@@ -282,35 +442,34 @@ void EmployeesPanel::render() {
         ImGui::TableSetupColumn("Примечание");
         ImGui::TableHeadersRow();
 
-        for (size_t i = 0; i < individuals.size(); ++i) {
+        for (size_t i = 0; i < employees.size(); ++i) {
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
-            if (ImGui::Selectable(std::to_string(individuals[i].id).c_str(),
+            if (ImGui::Selectable(std::to_string(employees[i].id).c_str(),
                                   selectedIndex == i,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
                 selectedIndex = i;
             }
 
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", individuals[i].full_name.c_str());
+            ImGui::Text("%s", employees[i].individual.c_str());
             ImGui::TableSetColumnIndex(2);
             // обрабатываем многострочку - просто срезаем после возврата строки
-            ImGui::Text("%s",
-                        individuals[i]
-                            .note.substr(0, individuals[i].note.find("\n"))
-                            .c_str());
+            ImGui::Text("%s", employees[i]
+                                  .note.substr(0, employees[i].note.find("\n"))
+                                  .c_str());
             // ImGui::TableSetColumnIndex(3);
             // // выравнивание вправо
             // ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
             // ImGui::SetCursorPosX(
             //     ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
             //     ImGui::CalcTextSize(
-            //         std::to_string(individuals[i].salary).c_str())
+            //         std::to_string(employees[i].salary).c_str())
             //         .x -
             //     ImGui::GetStyle().ItemSpacing.x);
-            // ImGui::Text("%.2f", individuals[i].salary);
+            // ImGui::Text("%.2f", employees[i].salary);
             // ImGui::PopStyleVar();
             //
             // выделена другая строка
@@ -318,19 +477,19 @@ void EmployeesPanel::render() {
                 // записать старые данные
                 if (writeToDatabase()) {
                     // Обновляем строку таблицы новыми данными
-                    individuals[oldIndex] = currentRecord;
+                    employees[oldIndex] = currentRecord;
                     // printf("Запись обновлена\n");
                 }
                 // printf("старый указатель %i, новый указатель %i \n",
                 // oldIndex,
                 //        selectedEmployee);
                 // взять в редактор новые данные
-                currentRecord = individuals[selectedIndex];
+                currentRecord = employees[selectedIndex];
                 oldIndex = selectedIndex;
             }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
-            if (goBottom && i == individuals.size() - 1) {
+            if (goBottom && i == employees.size() - 1) {
                 ImGui::SetScrollHereY(1.0f); // 1.0f = нижний край экрана
                 goBottom = false;
             }

@@ -71,9 +71,10 @@ void PositionsPanel::refresh() {
         [](void *data, int argc, char **argv, char **) {
             auto *list = static_cast<std::vector<Position> *>(data);
             // не забываем проверять текстовые поля на NULL
-            list->emplace_back(Position{std::stoi(argv[0]), argv[1],
-                                        std::stod(argv[2]), std::stod(argv[3]),
-                                        argv[4] ? argv[4] : ""});
+            list->emplace_back(Position{
+                std::stoi(argv[0]), argv[1] ? argv[1] : "",
+                argv[2] ? std::stod(argv[2]) : 0,
+                argv[3] ? std::stod(argv[3]) : 1, argv[4] ? argv[4] : ""});
             return 0;
         },
         &positions, nullptr);

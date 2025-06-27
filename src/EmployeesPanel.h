@@ -7,8 +7,20 @@
 
 struct Employee {
         int id = -1;
-        std::string full_name = "";
+        int individual_id = -1;
+        std::string individual = "";
+        int position_id = -1;
+        std::string position = "";
+        double rate;
+        std::string contract = "";
+        bool contract_found = false;
+        bool certificate_found = false;
         std::string note = "";
+};
+
+struct ListCombo {
+        int id = -1;
+        std::string value = "";
 };
 
 class EmployeesPanel : public Panel {
@@ -23,7 +35,10 @@ class EmployeesPanel : public Panel {
 
     private:
         Database &db;
-        std::vector<Employee> individuals;
+        std::vector<Employee> employees;    // основная таблица
+        std::vector<ListCombo> individuals; // таблица физлиц для комбо
+        std::vector<ListCombo> positions;   // таблица должностей для комбо
+
         int selectedIndex = -1;
         Employee currentRecord;
         int oldIndex = -1; // для отслеживание изменения выделенной строки
