@@ -29,6 +29,7 @@ pacman -S mingw-w64-x86_64-utf8cpp
 
 pacman -S git
 ```
+или аналогичный комплект mingw-w64-ucrt-x86_64-хххх
 
 ## Сборка проекта:
 ``` bash
