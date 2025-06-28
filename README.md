@@ -22,14 +22,14 @@ NotoSans-Regular.ttf
 ``` bash
 pacman -Syu                          # Обновление системы
 pacman -S --needed base-devel        # Базовые инструменты разработки
-pacman -S mingw-w64-x86_64-toolchain # Компилятор MinGW-w64
-pacman -S mingw-w64-x86_64-cmake     # CMake для MinGW
-pacman -S mingw-w64-x86_64-glfw      # GLFW (оконная система для ImGui)
-pacman -S mingw-w64-x86_64-utf8cpp
+pacman -S mingw-w64-ucrt-x86_64-toolchain # Компилятор MinGW-w64
+pacman -S mingw-w64-ucrt-x86_64-cmake     # CMake для MinGW
+pacman -S mingw-w64-ucrt-x86_64-glfw      # GLFW (оконная система для ImGui)
+pacman -S mingw-w64-ucrt-x86_64-icu       # для unicode/utf8.h
 
 pacman -S git
 ```
-или аналогичный комплект mingw-w64-ucrt-x86_64-хххх
+
 
 ## Сборка проекта:
 ``` bash
