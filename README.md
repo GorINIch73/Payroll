@@ -25,6 +25,8 @@ pacman -S --needed base-devel        # Базовые инструменты р�
 pacman -S mingw-w64-x86_64-toolchain # Компилятор MinGW-w64
 pacman -S mingw-w64-x86_64-cmake     # CMake для MinGW
 pacman -S mingw-w64-x86_64-glfw      # GLFW (оконная система для ImGui)
+pacman -S mingw-w64-x86_64-utf8cpp
+
 pacman -S git
 ```
 
