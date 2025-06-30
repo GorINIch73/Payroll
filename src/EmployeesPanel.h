@@ -1,6 +1,7 @@
 #pragma once
 #include "Database.h"
 #include "Panel.h"
+#include "imgui_components.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,11 +19,11 @@ struct Employee {
         std::string note = "";
 };
 
-struct ListCombo {
-        int id = -1;
-        std::string value = "";
-};
-
+// struct ListItem {
+//         int id = -1;
+//         std::string value = "";
+// };
+//
 class EmployeesPanel : public Panel {
     public:
         EmployeesPanel(Database &db);
@@ -36,8 +37,8 @@ class EmployeesPanel : public Panel {
     private:
         Database &db;
         std::vector<Employee> employees;    // основная таблица
-        std::vector<ListCombo> individuals; // таблица физлиц для комбо
-        std::vector<ListCombo> positions;   // таблица должностей для комбо
+        std::vector<ComboItem> individuals; // таблица физлиц для комбо
+        std::vector<ComboItem> positions;   // таблица должностей для комбо
 
         int selectedIndex = -1;
         Employee currentRecord;

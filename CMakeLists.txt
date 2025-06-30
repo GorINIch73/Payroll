@@ -68,6 +68,7 @@ add_executable(Payroll
     src/main.cpp  
     src/Database.cpp  
     src/GUI.cpp  
+    src/imgui_components.cpp
     src/EmployeesPanel.cpp
     src/IndividualsPanel.cpp
     src/PositionsPanel.cpp

@@ -14,6 +14,8 @@
 // #include <unicode/uchar.h> // Для ICU библиотеки
 #include <unicode/utf8.h>
 
+#include "imgui_components.h"
+
 EmployeesPanel::EmployeesPanel(Database &db)
     : Panel("Справочник работников"),
       db(db) {
@@ -124,10 +126,10 @@ void EmployeesPanel::refresh() {
     sqlite3_exec(
         db.getHandle(), sqlF,
         [](void *data, int argc, char **argv, char **) {
-            auto *list = static_cast<std::vector<ListCombo> *>(data);
+            auto *list = static_cast<std::vector<ComboItem> *>(data);
             // не забываем проверять текстовые поля на NULL
             list->emplace_back(
-                ListCombo{std::stoi(argv[0]), argv[1] ? argv[1] : ""});
+                ComboItem{std::stoi(argv[0]), argv[1] ? argv[1] : ""});
             return 0;
         },
         &individuals, nullptr);
@@ -140,10 +142,10 @@ void EmployeesPanel::refresh() {
     sqlite3_exec(
         db.getHandle(), sqlP,
         [](void *data, int argc, char **argv, char **) {
-            auto *list = static_cast<std::vector<ListCombo> *>(data);
+            auto *list = static_cast<std::vector<ComboItem> *>(data);
             // не забываем проверять текстовые поля на NULL
             list->emplace_back(
-                ListCombo{std::stoi(argv[0]), argv[1] ? argv[1] : ""});
+                ComboItem{std::stoi(argv[0]), argv[1] ? argv[1] : ""});
             return 0;
         },
         &positions, nullptr);
@@ -291,133 +293,27 @@ void EmployeesPanel::render() {
         focusFirst = false;
     }
 
-    ImGui::InputInt("ФИО1", &currentRecord.individual_id);
-    ImGui::InputText("ФИО", &currentRecord.individual);
+    // ImGui::InputInt("ФИО1", &currentRecord.individual_id);
+    // ImGui::InputText("ФИО", &currentRecord.individual);
+    ImGui::Text("ФИО");
+    ImGui::SameLine();
+    // комбобокс с фильтром
+    if (ComboWithFilter("##ФИО", &currentRecord.individual_id, individuals)) {
+        // Обработка изменения выбора
+        auto it3 = std::find_if(individuals.begin(), individuals.end(),
+                                [&](const ComboItem &e) {
+                                    return e.id == currentRecord.individual_id;
+                                });
 
-    // static std::vector<std::string> options = {"Вариант A", "Вариант B",
-    // "Вариант C"};
-    // static int selected_index = 0;
-
-    // std::cout << "комбо старт" << std::endl;
-
-    // Находим индекс выбранного элемента
-    size_t current_index = 0;
-    for (; current_index < individuals.size(); ++current_index) {
-        if (individuals[current_index].id == currentRecord.individual_id) {
-            break;
+        if (it3 != individuals.end()) {
+            // ImGui::Text("Выбрано: %s (ID: %d)", it3->name.c_str(), it3->id);
+            currentRecord.individual_id = it3->id;
         }
     }
-
-    if (ImGui::BeginCombo("Физические лица",
-                          current_index < individuals.size()
-                              ? individuals[current_index].value.c_str()
-                              : "Не выбрано")) {
-        for (size_t i = 0; i < individuals.size(); i++) {
-            bool is_selected =
-                (currentRecord.individual_id == individuals[i].id);
-            if (ImGui::Selectable(individuals[i].value.c_str(), is_selected)) {
-                currentRecord.individual_id = individuals[i].id;
-            }
-            if (is_selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-
-    // Находим текущее значение для отображения
-    // auto it = std::find_if(individuals.begin(), individuals.end(),
-    //                        [&](const ListCombo &i) {
-    //                            return i.id == currentRecord.individual_id;
-    //                        });
-    // const char *preview =
-    //     it != individuals.end() ? it->value.c_str() : "Не выбрано";
-    // if (ImGui::BeginCombo("dd", preview)) {
-    //     for (const auto &item : individuals) {
-    //         bool is_selected = (currentRecord.individual_id == item.id);
-    //         if (ImGui::Selectable(item.value.c_str(), is_selected)) {
-    //             currentRecord.individual_id = item.id;
-    //         }
-    //         if (is_selected) {
-    //             ImGui::SetItemDefaultFocus();
-    //         }
-    //     }
-    //
-    //     ImGui::EndCombo();
-    // }
-
-    // if (ImGui::BeginCombo(
-    //         "ФИО3", individuals[currentRecord.individual_id].value.c_str()))
-    //         {
-    //     for (int i = 0; i < individuals.size(); i++) {
-    //         bool is_selected = (currentRecord.individual_id == i);
-    //         if (ImGui::Selectable(individuals[i].value.c_str(), is_selected))
-    //         {
-    //             currentRecord.individual_id = i;
-    //         }
-    //         if (is_selected) {
-    //             ImGui::SetItemDefaultFocus();
-    //         }
-    //     }
-    //     ImGui::EndCombo();
-    // }
-
-    // std::cout << "комбо енд" << std::endl;
-    // ImGui::InputText("Примечание", &currentRecord.note);
-
-    // мультистрочник - морока прям
-    // Добавляем переносы вручную
-    std::string result = "";
-    float width = ImGui::GetContentRegionAvail().x;
-    float current_line_width = 0.0f;
-
-    int i = 0;
-
-    while (i < currentRecord.note.size()) {
-        int old_i = i;
-        UChar32 c;
-        U8_NEXT(currentRecord.note.c_str(), i, currentRecord.note.size(), c);
-
-        // посчитать размер
-        std::string char_s = currentRecord.note.substr(old_i, i - old_i);
-        float char_width = ImGui::CalcTextSize(char_s.c_str()).x;
-
-        if (current_line_width + char_width > width &&
-            currentRecord.note[i] != '\n') {
-            result.push_back('\n');
-
-            // std::cout << "i = " << i << std::endl;
-            // std::cout << "currentRecord = " << currentRecord.note[i]
-            //           << std::endl;
-            // std::cout << "width = " << width << std::endl;
-            // std::cout << "char_width = " << char_width << std::endl;
-            // std::cout << "current_line_width = " << current_line_width
-            //           << std::endl;
-            current_line_width = 0;
-        }
-        result.append(char_s);
-        current_line_width += char_width;
-    }
-
-    std::vector<char> buffer(result.begin(), result.end());
-    // buffer.push_back('\0');
-    buffer.resize(currentRecord.note.size() + 1024);
-
-    ImGui::PushTextWrapPos(width);
-    bool changed =
-        ImGui::InputTextMultiline("Примечание", buffer.data(), buffer.size(),
-                                  ImVec2(width, ImGui::GetTextLineHeight() * 3),
-                                  ImGuiInputTextFlags_NoHorizontalScroll);
-
-    if (changed) {
-        // Удаляем добавленные переносы перед сохранением
-        currentRecord.note = buffer.data();
-        currentRecord.note.erase(std::remove(currentRecord.note.begin(),
-                                             currentRecord.note.end(), '\n'),
-                                 currentRecord.note.end());
-    }
-
-    ImGui::PopTextWrapPos();
+    ImGui::Text("Примечание");
+    // текст с автопереносом
+    InputTextWrapper("##note", currentRecord.note,
+                     ImGui::GetContentRegionAvail().x);
 
     // Таблица со списком
 

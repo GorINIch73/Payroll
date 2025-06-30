@@ -12,6 +12,7 @@
 // #include <ostream>
 #include <string>
 // #include <unicode/uchar.h> // Для ICU библиотеки
+#include "imgui_components.h"
 #include <unicode/utf8.h>
 
 IndividualsPanel::IndividualsPanel(Database &db)
@@ -211,60 +212,10 @@ void IndividualsPanel::render() {
 
     // мультистрочник - морока прям
     ImGui::Text("Примечание:");
-    // ImGui::SameLiПe();
-    // Добавляем переносы вручную
-    std::string result = "";
-    float width = ImGui::GetContentRegionAvail().x;
-    float current_line_width = 0.0f;
-
-    int i = 0;
-
-    while (i < currentRecord.note.size()) {
-        int old_i = i;
-        UChar32 c;
-        U8_NEXT(currentRecord.note.c_str(), i, currentRecord.note.size(), c);
-
-        // посчитать размер
-        std::string char_s = currentRecord.note.substr(old_i, i - old_i);
-        float char_width = ImGui::CalcTextSize(char_s.c_str()).x;
-
-        if (current_line_width + char_width > width &&
-            currentRecord.note[i] != '\n') {
-            result.push_back('\n');
-
-            // std::cout << "i = " << i << std::endl;
-            // std::cout << "currentRecord = " << currentRecord.note[i]
-            //           << std::endl;
-            // std::cout << "width = " << width << std::endl;
-            // std::cout << "char_width = " << char_width << std::endl;
-            // std::cout << "current_line_width = " << current_line_width
-            //           << std::endl;
-            current_line_width = 0;
-        }
-        result.append(char_s);
-        current_line_width += char_width;
-    }
-
-    std::vector<char> buffer(result.begin(), result.end());
-    // buffer.push_back('\0');
-    buffer.resize(currentRecord.note.size() + 1024);
-
-    ImGui::PushTextWrapPos(width);
-    bool changed =
-        ImGui::InputTextMultiline("##Примечание", buffer.data(), buffer.size(),
-                                  ImVec2(width, ImGui::GetTextLineHeight() * 3),
-                                  ImGuiInputTextFlags_NoHorizontalScroll);
-
-    if (changed) {
-        // Удаляем добавленные переносы перед сохранением
-        currentRecord.note = buffer.data();
-        currentRecord.note.erase(std::remove(currentRecord.note.begin(),
-                                             currentRecord.note.end(), '\n'),
-                                 currentRecord.note.end());
-    }
-
-    ImGui::PopTextWrapPos();
-
+    // Поле с автопереносом
+    InputTextWrapper("##kh", currentRecord.note,
+                     ImGui::GetContentRegionAvail().x);
+    //
     // Таблица со списком
 
     // ImGui::SameLine();
