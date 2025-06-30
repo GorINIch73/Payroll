@@ -12,7 +12,7 @@ struct Employee {
         std::string individual = "";
         int position_id = -1;
         std::string position = "";
-        double rate;
+        double rate = 0.0f;
         std::string contract = "";
         bool contract_found = false;
         bool certificate_found = false;

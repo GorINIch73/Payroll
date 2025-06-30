@@ -15,3 +15,6 @@ bool ComboWithFilter(const char *label, int *current_id,
                      std::vector<ComboItem> &items, ImGuiComboFlags flags = 0);
 // Текстовое поле ввода с посимвольным автопереносом
 bool InputTextWrapper(const char *label, std::string &text, float width);
+
+// кастомный чекбокс
+bool ToggleButton(const char *label, bool *v);

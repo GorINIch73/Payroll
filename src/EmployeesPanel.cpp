@@ -137,8 +137,9 @@ void EmployeesPanel::refresh() {
     // std::cout << "рефреш физлиц норм " << std::endl;
     // таблица должностейш
     positions.clear();
-    const char *sqlP = "SELECT id, job_title "
-                       "FROM Positions;";
+    const char *sqlP =
+        "SELECT id, job_title || ' : ' || printf('%.2f', salary) "
+        "FROM Positions;";
     sqlite3_exec(
         db.getHandle(), sqlP,
         [](void *data, int argc, char **argv, char **) {
@@ -295,22 +296,55 @@ void EmployeesPanel::render() {
 
     // ImGui::InputInt("ФИО1", &currentRecord.individual_id);
     // ImGui::InputText("ФИО", &currentRecord.individual);
-    ImGui::Text("ФИО");
+    ImGui::Text("ФИО:");
     ImGui::SameLine();
     // комбобокс с фильтром
     if (ComboWithFilter("##ФИО", &currentRecord.individual_id, individuals)) {
         // Обработка изменения выбора
-        auto it3 = std::find_if(individuals.begin(), individuals.end(),
-                                [&](const ComboItem &e) {
-                                    return e.id == currentRecord.individual_id;
-                                });
+        auto it = std::find_if(individuals.begin(), individuals.end(),
+                               [&](const ComboItem &e) {
+                                   return e.id == currentRecord.individual_id;
+                               });
 
-        if (it3 != individuals.end()) {
-            // ImGui::Text("Выбрано: %s (ID: %d)", it3->name.c_str(), it3->id);
-            currentRecord.individual_id = it3->id;
+        if (it != individuals.end()) {
+            // ImGui::Text("Выбрано: %s (ID: %d)", it3->name.c_str(),
+            currentRecord.individual_id = it->id;
         }
     }
-    ImGui::Text("Примечание");
+    ImGui::Text("Должность:");
+    ImGui::SameLine();
+    // комбобокс с фильтром
+    if (ComboWithFilter("##Должность", &currentRecord.position_id, positions)) {
+        // Обработка изменения выбора
+        auto itp = std::find_if(positions.begin(), positions.end(),
+                                [&](const ComboItem &e) {
+                                    return e.id == currentRecord.position_id;
+                                });
+
+        if (itp != positions.end()) {
+            currentRecord.position_id = itp->id;
+        }
+    }
+
+    ImGui::Text("Занято ставок:");
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(
+        ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+        ImGui::CalcTextSize(std::to_string(currentRecord.rate).c_str()).x);
+    ImGui::SetNextItemWidth(
+        ImGui::CalcTextSize(std::to_string(currentRecord.rate).c_str()).x);
+    ImGui::InputDouble("##ставки", &currentRecord.rate, 0, 0, "%0.2f");
+
+    ImGui::Text("Трудовой договор:");
+    ImGui::SameLine();
+    ImGui::InputText("##договор", &currentRecord.contract);
+
+    ToggleButton("Договор найден:", &currentRecord.contract_found);
+
+    ImGui::SameLine();
+    ToggleButton("Сертификат найден:", &currentRecord.certificate_found);
+
+    ImGui::Text("Примечание:");
     // текст с автопереносом
     InputTextWrapper("##note", currentRecord.note,
                      ImGui::GetContentRegionAvail().x);
@@ -325,7 +359,7 @@ void EmployeesPanel::render() {
     ImGui::Separator();
     // ImGui::PopStyleColor();
 
-    if (ImGui::BeginTable("Employees", 3,
+    if (ImGui::BeginTable("Employees", 8,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                               ImGuiTableFlags_RowBg |
                               ImGuiTableFlags_ScrollY)) {
@@ -335,6 +369,20 @@ void EmployeesPanel::render() {
                                     ImGuiTableColumnFlags_NoResize,
                                 50.0f);
         ImGui::TableSetupColumn("ФИО");
+        ImGui::TableSetupColumn("Должность");
+        ImGui::TableSetupColumn("Ставка",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                100.0f);
+        ImGui::TableSetupColumn("Договор");
+        ImGui::TableSetupColumn("дог+",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                10.0f);
+        ImGui::TableSetupColumn("серт+",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                10.0f);
         ImGui::TableSetupColumn("Примечание");
         ImGui::TableHeadersRow();
 
@@ -352,6 +400,26 @@ void EmployeesPanel::render() {
             ImGui::TableSetColumnIndex(1);
             ImGui::Text("%s", employees[i].individual.c_str());
             ImGui::TableSetColumnIndex(2);
+            ImGui::Text("%s", employees[i].position.c_str());
+            ImGui::TableSetColumnIndex(3);
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+            ImGui::SetCursorPosX(
+                ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+                ImGui::CalcTextSize(std::to_string(employees[i].rate).c_str())
+                    .x -
+                ImGui::GetStyle().ItemSpacing.x);
+
+            ImGui::Text("%0.2f", employees[i].rate);
+            ImGui::PopStyleVar();
+
+            ImGui::TableSetColumnIndex(4);
+            ImGui::Text("%s", employees[i].contract.c_str());
+            ImGui::TableSetColumnIndex(5);
+            ImGui::Text("%s", employees[i].contract_found ? "+" : " ");
+            ImGui::TableSetColumnIndex(6);
+            ImGui::Text("%s", employees[i].certificate_found ? "+" : " ");
+            ImGui::TableSetColumnIndex(7);
             // обрабатываем многострочку - просто срезаем после возврата строки
             ImGui::Text("%s", employees[i]
                                   .note.substr(0, employees[i].note.find("\n"))
