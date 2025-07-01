@@ -21,6 +21,7 @@ IndividualsPanel::IndividualsPanel(Database &db)
     refresh();
     // std::cout << "проехали конструктор " << std::endl;
 }
+IndividualsPanel::~IndividualsPanel() { writeToDatabase(); }
 
 bool IndividualsPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
@@ -49,6 +50,7 @@ bool IndividualsPanel::addRecord() {
 
 bool IndividualsPanel::delRecord() {
     // удаление текущей записи
+    // хз надо ли контролить зависимые записи или пусть пустыми остаются
     if (currentRecord.id >= 0) {
         std::string sql;
         sql = "DELETE FROM Individuals WHERE id =" +

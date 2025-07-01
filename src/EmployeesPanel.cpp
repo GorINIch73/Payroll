@@ -23,6 +23,8 @@ EmployeesPanel::EmployeesPanel(Database &db)
     // std::cout << "проехали конструктор " << std::endl;
 }
 
+EmployeesPanel::~EmployeesPanel() { writeToDatabase(); }
+
 bool EmployeesPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
     std::string sql;

@@ -23,6 +23,8 @@ PositionsPanel::PositionsPanel(Database &db)
     // std::cout << "проехали конструктор " << std::endl;
 }
 
+PositionsPanel::~PositionsPanel() { writeToDatabase(); }
+
 bool PositionsPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
     std::string sql;
@@ -52,6 +54,8 @@ bool PositionsPanel::addRecord() {
 
 bool PositionsPanel::delRecord() {
     // удаление текущей записи
+    // хз надо ли контролить зависимые записи или пусть пустыми остаются
+
     if (currentRecord.id >= 0) {
         std::string sql;
         sql = "DELETE FROM Positions WHERE id =" +

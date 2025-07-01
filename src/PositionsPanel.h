@@ -16,6 +16,8 @@ struct Position {
 class PositionsPanel : public Panel {
     public:
         PositionsPanel(Database &db);
+        ~PositionsPanel();
+
         void render() override;
         void refresh();
         bool writeToDatabase();

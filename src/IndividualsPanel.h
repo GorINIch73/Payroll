@@ -14,6 +14,7 @@ struct Individual {
 class IndividualsPanel : public Panel {
     public:
         IndividualsPanel(Database &db);
+        ~IndividualsPanel();
         void render() override;
         void refresh();
         bool writeToDatabase();

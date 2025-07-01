@@ -27,6 +27,7 @@ struct Employee {
 class EmployeesPanel : public Panel {
     public:
         EmployeesPanel(Database &db);
+        ~EmployeesPanel();
         void render() override;
         void refresh();
         bool writeToDatabase();
