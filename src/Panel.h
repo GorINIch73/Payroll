@@ -1,18 +1,19 @@
 #pragma once
-#include <string>
 #include <imgui.h>
+#include <string>
 
 class Panel {
-public:
-    Panel(const std::string& name) : name(name), isOpen(true) {}
-    virtual ~Panel() = default;
+    public:
+        Panel(const std::string &name)
+            : name(name),
+              isOpen(true) {}
+        virtual ~Panel() = default;
 
-    virtual void render() = 0;  // ó®·‚Æ ¢®‡‚„†´Ï≠Î© ¨•‚Æ§
-    const std::string& getName() const { return name; }
-    bool& getIsOpen() { return isOpen; }
+        virtual void render() = 0; // –æ–ª–æ–ª–æ–ª
+        const std::string &getName() const { return name; }
+        bool &getIsOpen() { return isOpen; }
 
-protected:
-    std::string name;
-    bool isOpen;
+    protected:
+        std::string name;
+        bool isOpen;
 };
-
