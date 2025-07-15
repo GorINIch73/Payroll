@@ -39,7 +39,7 @@ bool PositionsPanel::writeToDatabase() {
         // std::cout << sql << std::endl;
 
         printf("Обновление записи ... \n");
-        return db.execute(sql);
+        return db.Execute(sql);
     }
 
     return false;
@@ -49,7 +49,7 @@ bool PositionsPanel::addRecord() {
     // добавление новой записи в базу
     std::string sql;
     sql = "INSERT INTO Positions (job_title) VALUES ( '');";
-    return db.execute(sql);
+    return db.Execute(sql);
 }
 
 bool PositionsPanel::delRecord() {
@@ -60,7 +60,7 @@ bool PositionsPanel::delRecord() {
         std::string sql;
         sql = "DELETE FROM Positions WHERE id =" +
               std::to_string(currentRecord.id) + ";";
-        return db.execute(sql);
+        return db.Execute(sql);
     }
 
     return false;

@@ -35,7 +35,7 @@ bool IndividualsPanel::writeToDatabase() {
         // std::cout << sql << std::endl;
 
         printf("Обновление записи ... \n");
-        return db.execute(sql);
+        return db.Execute(sql);
     }
 
     return false;
@@ -45,7 +45,7 @@ bool IndividualsPanel::addRecord() {
     // добавление новой записи в базу
     std::string sql;
     sql = "INSERT INTO Individuals (full_name) VALUES ( '');";
-    return db.execute(sql);
+    return db.Execute(sql);
 }
 
 bool IndividualsPanel::delRecord() {
@@ -55,7 +55,7 @@ bool IndividualsPanel::delRecord() {
         std::string sql;
         sql = "DELETE FROM Individuals WHERE id =" +
               std::to_string(currentRecord.id) + ";";
-        return db.execute(sql);
+        return db.Execute(sql);
     }
 
     return false;

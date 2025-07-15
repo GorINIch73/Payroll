@@ -49,7 +49,7 @@ bool EmployeesPanel::writeToDatabase() {
 
         // std::cout << currentRecord.note << std::endl;
         // std::cout << sql << std::endl;
-        if (db.execute(sql)) {
+        if (db.Execute(sql)) {
 
             // обновляем запись в таблице пока что полным обновлением
             refresh();
@@ -64,7 +64,7 @@ bool EmployeesPanel::addRecord() {
     // добавление новой записи в базу
     std::string sql;
     sql = "INSERT INTO Employees (rate) VALUES (1);";
-    return db.execute(sql);
+    return db.Execute(sql);
 }
 
 bool EmployeesPanel::delRecord() {
@@ -73,7 +73,7 @@ bool EmployeesPanel::delRecord() {
         std::string sql;
         sql = "DELETE FROM Employees WHERE id =" +
               std::to_string(currentRecord.id) + ";";
-        return db.execute(sql);
+        return db.Execute(sql);
     }
 
     return false;

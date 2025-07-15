@@ -7,7 +7,7 @@
 #include "PositionsPanel.h"
 
 #include "ImGuiFileDialog.h"
-// #include "PdfExporter.h"
+#include "PdfExporter.h"
 
 #include <iostream>
 
@@ -54,10 +54,10 @@ GUI::GUI(GLFWwindow *w)
 
     // Инициализация базы данных
       // Database db;
-    if (!db.open("payroll.db")) {
-        std::cerr << "Не удалось открыть БД!" << std::endl;
-        // return -1;
-    }
+    // if (!db.open("payroll.db")) {
+    //     std::cerr << "Не удалось открыть БД!" << std::endl;
+    //     // return -1;
+    // }
 
     // ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".png",
     //                                           ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
@@ -104,6 +104,15 @@ void GUI::render() {
                      ImGuiWindowFlags_NoSavedSettings);
 
     showMainMenu();
+
+    if (showSettings)
+        ShowSettings();
+    if (showAbout)
+        ShowAbout();
+    if (showFileDialog)
+        ShowFileDialog();
+
+
 
     // Основное окно с табами
     //
@@ -199,10 +208,28 @@ void GUI::showMainMenu() {
     if (ImGui::BeginMainMenuBar()) {
 
         if (ImGui::BeginMenu("Файл")) {
+            
+            if (ImGui::MenuItem("Открыть базу")) {
+                showFileDialog = true;
+                // Логика открытия файла (используем ImGuiFileDialog)
+            }
+            if (ImGui::MenuItem("Закрыть базу")) {
+                db.Close();
+            }
+
+            if (ImGui::BeginMenu("Последние файлы")) {
+                for (const auto &file : recentFiles) {
+                    if (ImGui::MenuItem(file.empty() ? "путо" : file.c_str())) {
+                        db.Open(file);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            
             if (ImGui::MenuItem("Создать БД")) {
                 /* Создать новую БД */
 
-                if (!db.createNewDatabase()) {
+                if (!db.CreateNewDatabase()) {
                     std::cerr << "Ошибка создания БД!" << std::endl;
                     return;
                 }
@@ -242,4 +269,80 @@ void GUI::showMainMenu() {
         }
         ImGui::EndMainMenuBar();
     }
+}
+
+  
+void GUI::ShowFileDialog() {
+    if (!showFileDialog)
+        return;
+
+    IGFD::FileDialogConfig config;
+    config.path = ".";
+    ImGuiFileDialog::Instance()->OpenDialog(
+        "ChooseFileDlg", // Уникальный ID
+        "Выберите файл", // Заголовок
+        //            ".*,.db,.pdf",     // Фильтры (через запятую)
+        ".db", // Фильтр (через запятую)
+        config // Стартовая папка
+    );
+
+    // Обработка выбора файла
+    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlg")) {
+        if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+            std::string filePathName =
+                ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath =
+                ImGuiFileDialog::Instance()->GetCurrentPath();
+
+            // std::cout << "Выбран файл имя: " << filePathName << std::endl;
+            // std::cout << "Выбран файл: " << filePath << std::endl;
+
+            // загрузка базы данных
+            // надо сделать принудительное закрытие всех окон - хз
+
+            // db.Open(filePathName);
+            if (!db.Open(filePathName)) {
+                std::cerr << "Не удалось открыть БД!" << std::endl;
+                // return -1;
+            }
+            else {
+                // Добавляем в список последних файлов и сохраняем
+                recentFiles.push_back(filePathName);
+                settings.lastDbPath = filePathName;
+                settings.Save("config.json");
+            }
+        }
+
+        // Закрываем диалог
+        ImGuiFileDialog::Instance()->Close();
+        showFileDialog = false;
+    }
+}
+
+void GUI::ShowSettings() {
+    if (!showSettings)
+        return;
+
+    ImGui::Begin("Настройки", &showSettings);
+    ImGui::Combo("Тема", &settings.theme, "Светлая\0Темная\0");
+
+    if (ImGui::Button("Сохранить")) {
+        settings.Save("config.json");
+    }
+    ImGui::End();
+}
+
+void GUI::ShowAbout() {
+    if (!showAbout)
+        return;
+
+    ImGui::Begin("Об авторах", &showAbout);
+
+    ImGui::End();
+}
+
+void GUI::GeneratePdfReport() {
+    auto data = db.FetchAll("SELECT * FROM users");
+    PdfExporter exporter;
+    exporter.ExportToPdf(data, "report.pdf");
 }

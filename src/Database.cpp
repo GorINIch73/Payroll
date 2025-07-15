@@ -8,9 +8,9 @@ Database::Database()
     // хз что ту делать
 }
 
-bool Database::open(const std::string &Path) {
+bool Database::Open(const std::string &Path) {
     // если была открыта - закрыть
-    close();
+    Close();
 
     dbPath = Path;
     // открываем новую
@@ -29,9 +29,9 @@ bool Database::open(const std::string &Path) {
     return true;
 }
 
-Database::~Database() { close(); }
+Database::~Database() { Close(); }
 
-void Database::close() {
+void Database::Close() {
 
     if (db) {
         sqlite3_close(db); // Закрываем соединение с БД
@@ -39,7 +39,7 @@ void Database::close() {
     }
 }
 
-bool Database::execute(const std::string &sql) {
+bool Database::Execute(const std::string &sql) {
 
     if (!db)
         return false;
@@ -54,7 +54,7 @@ bool Database::execute(const std::string &sql) {
     return true;
 }
 
-bool Database::createNewDatabase() {
+bool Database::CreateNewDatabase() {
 
     if (!db)
         return false;
@@ -135,7 +135,7 @@ bool Database::createNewDatabase() {
 
     )";
 
-    return execute(sql);
+    return Execute(sql);
 }
 
 bool Database::tableExists(const std::string &tableName) {
@@ -152,3 +152,30 @@ bool Database::tableExists(const std::string &tableName) {
         &exists, nullptr);
     return exists;
 }
+
+
+std::vector<std::map<std::string, std::string>> Database::FetchAll(const std::string& query) {
+    std::vector<std::map<std::string, std::string>> result;
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return result;
+    }
+
+    int cols = sqlite3_column_count(stmt);
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        std::map<std::string, std::string> row;
+        for (int i = 0; i < cols; i++) {
+            const char* colName = sqlite3_column_name(stmt, i);
+            const char* colValue = (const char*)sqlite3_column_text(stmt, i);
+            row[colName] = colValue ? colValue : "NULL";
+        }
+        result.push_back(row);
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+
