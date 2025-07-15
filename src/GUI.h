@@ -1,5 +1,6 @@
 #pragma ones
 #include "Database.h"
+#include "Settings.h"
 // #include "EmployeesPanel.h"
 // #include "IndividualsPanel.h"
 #include "Panel.h"
@@ -12,17 +13,30 @@
 
 class GUI {
     public:
-        GUI(GLFWwindow *w, Database &base);
+        GUI(GLFWwindow *w);
+         //void Init(GLFWwindow *window); // Принимаем окно
+        void render();
+
+    private:
+        GLFWwindow *window;
+        Database db;
+        // std::vector<std::unique_ptr<Panel>> panels;
+
+
+        Settings settings;
+        std::vector<std::string> recentFiles;
+        bool showSettings = false;
+        bool showAbout = false;
+        bool showFileDialog = false;
+
 
         void addEmployeesPanel();
         void addIndividualsPanel();
         void addPositionsPanel();
 
-        void render();
         void showMainMenu();
-
-    private:
-        GLFWwindow *window;
-        Database &db;
-        std::vector<std::unique_ptr<Panel>> panels;
+        void ShowSettings();
+        void ShowAbout();
+        void ShowFileDialog();
+        void GeneratePdfReport();
 };

@@ -21,6 +21,7 @@ add_subdirectory(thirdparty/libharu)
 # include(ExternalProject)
 # Указываем пути
 set(LIBHARU_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/libharu/include)
+set(LIBHARU_INCLUDE_DIR_CONF ${CMAKE_BINARY_DIR}/thirdparty/libharu/include)
 # if (WIN32)
 #     set(LIBHARU_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/libharu/libhpdf.dll.a)
 # else()
@@ -75,8 +76,8 @@ add_executable(Payroll
     #src/EmployeeListPanel.cpp
     #src/EmployeeEditPanel.cpp
 
-    #    src/Settings.cpp  
-    #    src/PdfExporter.cpp  
+    src/Settings.cpp  
+    src/PdfExporter.cpp  
  
     ${IMGUI_SOURCES}
     # ${GLAD_SOURCES}
@@ -96,6 +97,7 @@ target_include_directories(Payroll  PRIVATE
     ${GLFW3_INCLUDE_DIR}
     ${SQLite3_INCLUDE_DIR} 
 	${LIBHARU_INCLUDE_DIR}
+    ${LIBHARU_INCLUDE_DIR_CONF}
 	${JSON_INCLUDE_DIR}
 
 	${ImGuiFileDialog_DIR}
@@ -110,17 +112,38 @@ target_link_libraries(Payroll PRIVATE
     ${SQLite3_LIBRARY} 
 )
 
-if(WIN32)
-    # хз почему не копирует под винду
-else()
+# Копируем Фонты после сборки
 add_custom_command(
-    TARGET Payroll  # Имя вашего target (исполняемого файла/библиотеки)
-    POST_BUILD     # Копировать после сборки
+    TARGET Payroll POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/font/*.ttf
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/font/NotoSans-Regular.ttf
         ${CMAKE_CURRENT_BINARY_DIR}/
-    COMMENT "Копирование ресурсов в каталог сборки..."
 )
+
+add_custom_command(
+    TARGET Payroll POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/font/fontawesome-webfont.ttf
+        ${CMAKE_CURRENT_BINARY_DIR}/
+)
+
+
+# копируем библиотеку libharu
+if(WIN32)
+    # Копируем DLL после сборки
+    add_custom_command(
+        TARGET Payroll POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libharu/src/libhpdf.dll
+            ${CMAKE_CURRENT_BINARY_DIR}/
+    )
+else()
+
+    # Копируем .so в папку сборки
+    file(COPY 
+        ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libharu/src/libhpdf.so
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+    )
 endif()
 
 # Для Windows: копирование DLL GLFW

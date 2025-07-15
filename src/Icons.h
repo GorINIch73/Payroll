@@ -28,6 +28,7 @@
 #define ICON_FA_CHART u8"\uf080"     // график
 #define ICON_FA_LIST u8"\uf03a"      // список
 #define ICON_FA_LIST_ALT u8"\uf298"  // список в рамке
+#define ICON_FA_DATA_BASE u8"\uf1c0"  // база данных
 
 // Диапазон иконок для ImGui
 // static const ImWchar icons_ranges[] = {

@@ -1,17 +1,26 @@
-
 #include "GUI.h"
+#include "Icons.h"
 #include "Database.h"
 #include "EmployeesPanel.h"
 #include "IndividualsPanel.h"
+#include "Panel.h"
 #include "PositionsPanel.h"
-#include <imgui.h>
+
+#include "ImGuiFileDialog.h"
+// #include "PdfExporter.h"
+
 #include <iostream>
 
-#include <imgui_internal.h>
+#include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
-GUI::GUI(GLFWwindow *w, Database &base)
-    : window(w),
-      db(base) {
+// #include <imgui_internal.h>
+
+GUI::GUI(GLFWwindow *w)
+    : window(w)
+       {
 
     // db = base;
     // Создаем панели при старте
@@ -19,13 +28,60 @@ GUI::GUI(GLFWwindow *w, Database &base)
     //    auto editPanel = std::make_unique<EmployeeEditPanel>(db, *listPanel);
 
     // Добавляем в вектор
-    //     panels.push_back(std::move(listPanel));
-    //     panels.push_back(std::move(editPanel));
+    //     manager_panels.push_back(std::move(listPanel));
+    //     manager_panels.push_back(std::move(editPanel));
+
+    // Настройка иконок в ImGuiFileDialog
+ 
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // грузим русский шрифт
+    ImFont *font =
+        io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf", 24.0f, nullptr,
+                                     io.Fonts->GetGlyphRangesCyrillic());
+
+    // Добавляем иконки
+    ImFontConfig config;
+    // Добавляем Font Awesome
+    config.MergeMode = true;
+    config.PixelSnapH = true;
+
+    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
+                                 icons_ranges);
+
+    // Инициализация базы данных
+      // Database db;
+    if (!db.open("payroll.db")) {
+        std::cerr << "Не удалось открыть БД!" << std::endl;
+        // return -1;
+    }
+
+    // ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".png",
+    //                                           ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
+    //                                           ICON_FA_FILE_IMAGE);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".db",
+                                              ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
+                                              ICON_FA_DATA_BASE);
+    // ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".txt",
+    //                                           ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
+    //                                           ICON_FA_FILE_LINES);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "",
+                                              ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
+                                              ICON_FA_FOLDER); // Папки
+
+    // загружаем данные из конфига
+    settings.Load("config.json");
+    //	std::cout << "old file: " << settings.lastDbPath;
+    recentFiles.push_back(settings.lastDbPath);
+
 }
 
 void GUI::render() {
 
-    // Получаем размер окна
+// Получаем размер окна
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -58,10 +114,14 @@ void GUI::render() {
     //
     if (ImGui::BeginTabBar("MainTabBar")) {
         // Вкладка "Сотрудники"
+        
         int numTab = 0;
-        for (auto panel = panels.begin(); panel != panels.end();) {
+        for (auto panel = manager_panels.begin(); panel != manager_panels.end();) {
 
-            std::string name = "Вкладка " + std::to_string(numTab);
+            std::string name;
+            name = name + std::to_string(numTab) + " " + (*panel)->getName();
+            // std::string name = "таб " + std::to_string(numTab);
+            
 
             if (ImGui::BeginTabItem(name.c_str(), &(*panel)->getIsOpen(),
                                     ImGuiTabItemFlags_UnsavedDocument)) {
@@ -70,9 +130,9 @@ void GUI::render() {
                 ImGui::EndTabItem();
             }
             if (!(*panel)->getIsOpen()) {
-                panel = panels.erase(panel);
+                printf("%s был закрыт\n",(*panel)->getName());
+                panel = manager_panels.erase(panel);
                 // Действие при закрытии Tab
-                printf("Tab 1 был закрыт\n");
 
             } else {
                 ++panel;
@@ -80,7 +140,7 @@ void GUI::render() {
 
             numTab++;
         }
-        // // Вкладка "Начисления"
+        // // Вкладка "Начисления"``
         // if (ImGui::BeginTabItem("Начисления")) {
         //     // Здесь можно разместить панель для работы с начислениями
         //     ImGui::Text("Панель начислений будет здесь");
@@ -108,15 +168,15 @@ void GUI::addEmployeesPanel() {
     // *newListPanel);
 
     // auto newEditPanel = std::make_unique<EmployeeEditPanel>(db,
-    //     *static_cast<EmployeeListPanel*>(panels[0].get()));
+    //     *static_cast<EmployeeListPanel*>(manager_panels[0].get()));
 
     //    newPanel->setEmployee(Employee{0, "", "", 0.0});  // Новый сотрудник
 
     newPanel->getIsOpen() = true;
     // newEditPanel->getIsOpen() = true;
 
-    panels.push_back(std::move(newPanel));
-    // panels.push_back(std::move(newEditPanel));
+    manager_panels.push_back(std::move(newPanel));
+    // manager_panels.push_back(std::move(newEditPanel));
 }
 
 void GUI::addPositionsPanel() {
@@ -124,7 +184,7 @@ void GUI::addPositionsPanel() {
     auto newPanel = std::make_unique<PositionsPanel>(db);
     newPanel->getIsOpen() = true;
 
-    panels.push_back(std::move(newPanel));
+    manager_panels.push_back(std::move(newPanel));
 }
 
 void GUI::addIndividualsPanel() {
@@ -132,7 +192,7 @@ void GUI::addIndividualsPanel() {
     auto newPanel = std::make_unique<IndividualsPanel>(db);
     newPanel->getIsOpen() = true;
 
-    panels.push_back(std::move(newPanel));
+    manager_panels.push_back(std::move(newPanel));
 }
 
 void GUI::showMainMenu() {
@@ -158,7 +218,7 @@ void GUI::showMainMenu() {
             if (ImGui::MenuItem("Сотрудники")) {
                 addEmployeesPanel();
                 // Ищем панель в списке и открываем
-                // for (auto& panel : panels) {
+                // for (auto& panel : manager_panels) {
                 //     if (panel->getName() == "Справочник сотрудников") {
                 //         panel->getIsOpen() = true;
                 //         break;

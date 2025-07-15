@@ -2,6 +2,10 @@
 #include <imgui.h>
 #include <string>
 
+#include <memory>
+#include <vector>
+
+
 class Panel {
     public:
         Panel(const std::string &name)
@@ -17,3 +21,11 @@ class Panel {
         std::string name;
         bool isOpen;
 };
+
+
+// void render_all_panels();
+// bool push_panel(Panel *pnl);
+// bool remove_panel();
+
+static std::vector<std::unique_ptr<Panel>> manager_panels;
+

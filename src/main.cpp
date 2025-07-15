@@ -1,7 +1,7 @@
 
 #include "Database.h"
 #include "GUI.h"
-#include "Icons.h"
+
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -22,31 +22,31 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    ImGuiIO &io = ImGui::GetIO();
-    (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-    // грузим русский шрифт
-    ImFont *font =
-        io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf", 24.0f, nullptr,
-                                     io.Fonts->GetGlyphRangesCyrillic());
-
-    // Добавляем иконки
-    ImFontConfig config;
-    // Добавляем Font Awesome
-    config.MergeMode = true;
-    config.PixelSnapH = true;
-
-    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-    io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
-                                 icons_ranges);
-
-    // Инициализация базы данных
-    Database db;
-    if (!db.open("payroll.db")) {
-        std::cerr << "Не удалось открыть БД!" << std::endl;
-        return -1;
-    }
+    // ImGuiIO &io = ImGui::GetIO();
+    // (void)io;
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    //
+    // // грузим русский шрифт
+    // ImFont *font =
+    //     io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf", 24.0f, nullptr,
+    //                                  io.Fonts->GetGlyphRangesCyrillic());
+    //
+    // // Добавляем иконки
+    // ImFontConfig config;
+    // // Добавляем Font Awesome
+    // config.MergeMode = true;
+    // config.PixelSnapH = true;
+    //
+    // static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    // io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
+    //                              icons_ranges);
+    //
+    // // Инициализация базы данных
+    // Database db;
+    // if (!db.open("payroll.db")) {
+    //     std::cerr << "Не удалось открыть БД!" << std::endl;
+    //     return -1;
+    // }
 
     // if (!db.createNewDatabase()) {
     //     std::cerr << "Ошибка создания БД!" << std::endl;
@@ -54,7 +54,7 @@ int main() {
     // }
     //
     // Основной GUI
-    GUI gui(window, db);
+    GUI gui(window);
 
     // Главный цикл
     while (!glfwWindowShouldClose(window)) {
