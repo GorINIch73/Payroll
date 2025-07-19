@@ -122,7 +122,7 @@ void GUI::render() {
     //                 ImGuiWindowFlags_NoCollapse);
     //
     if (ImGui::BeginTabBar("MainTabBar")) {
-        // Вкладка "Сотрудники"
+        // Вкладки
         
         int numTab = 0;
         for (auto panel = manager_panels.begin(); panel != manager_panels.end();) {
@@ -131,9 +131,16 @@ void GUI::render() {
             name = name + std::to_string(numTab) + " " + (*panel)->getName();
             // std::string name = "таб " + std::to_string(numTab);
             
+            // Устанавливаем флаг выбора для последней вкладки
+            ImGuiTabItemFlags flags =  0;
+            if (goEndPanel && (panel == std::prev(manager_panels.end()))) {
+                goEndPanel = false;
+                flags = ImGuiTabItemFlags_SetSelected;
+                // std::cout << "go last panels " << (*panel)->getName() << std::endl;
+            }
 
             if (ImGui::BeginTabItem(name.c_str(), &(*panel)->getIsOpen(),
-                                    ImGuiTabItemFlags_UnsavedDocument)) {
+                                    ImGuiTabItemFlags_UnsavedDocument | flags )) {
 
                 (*panel)->render();
                 ImGui::EndTabItem();
@@ -148,20 +155,8 @@ void GUI::render() {
             }
 
             numTab++;
+
         }
-        // // Вкладка "Начисления"``
-        // if (ImGui::BeginTabItem("Начисления")) {
-        //     // Здесь можно разместить панель для работы с начислениями
-        //     ImGui::Text("Панель начислений будет здесь");
-        //     ImGui::EndTabItem();
-        // }
-        //
-        // // Вкладка "Отчеты"
-        // if (ImGui::BeginTabItem("Отчеты")) {
-        //     ImGui::Text("Панель отчетов будет здесь");
-        //     ImGui::EndTabItem();
-        // }
-        //
         ImGui::EndTabBar();
     }
 
@@ -170,22 +165,12 @@ void GUI::render() {
 }
 
 void GUI::addEmployeesPanel() {
-
+// сотрудники
     auto newPanel = std::make_unique<EmployeesPanel>(db);
-
-    // auto newEditPanel = std::make_unique<EmployeeEditPanel>(db,
-    // *newListPanel);
-
-    // auto newEditPanel = std::make_unique<EmployeeEditPanel>(db,
-    //     *static_cast<EmployeeListPanel*>(manager_panels[0].get()));
-
-    //    newPanel->setEmployee(Employee{0, "", "", 0.0});  // Новый сотрудник
-
     newPanel->getIsOpen() = true;
-    // newEditPanel->getIsOpen() = true;
 
     manager_panels.push_back(std::move(newPanel));
-    // manager_panels.push_back(std::move(newEditPanel));
+    goEndPanel = true;
 }
 
 void GUI::addPositionsPanel() {
@@ -194,6 +179,7 @@ void GUI::addPositionsPanel() {
     newPanel->getIsOpen() = true;
 
     manager_panels.push_back(std::move(newPanel));
+    goEndPanel = true;
 }
 
 void GUI::addIndividualsPanel() {
@@ -202,6 +188,7 @@ void GUI::addIndividualsPanel() {
     newPanel->getIsOpen() = true;
 
     manager_panels.push_back(std::move(newPanel));
+    goEndPanel = true;
 }
 
 void GUI::showMainMenu() {
@@ -219,7 +206,7 @@ void GUI::showMainMenu() {
 
             if (ImGui::BeginMenu("Последние файлы")) {
                 for (const auto &file : recentFiles) {
-                    if (ImGui::MenuItem(file.empty() ? "путо" : file.c_str())) {
+                    if (ImGui::MenuItem(file.empty() ? "путо" :  file.c_str())) {
                         db.Open(file);
                     }
                 }
