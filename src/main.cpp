@@ -1,5 +1,7 @@
 
 #include "Database.h"
+#include "Panel.h"
+#include "EmployeesPanel.h"
 #include "GUI.h"
 
 #include <GLFW/glfw3.h>
@@ -66,6 +68,11 @@ int main() {
         // ImGui::SetNextWindowPos(ImVec2(0, 0));
         // ImGui::SetNextWindowSize(io.DisplaySize);
         //
+        
+// сотрудники
+
+    // auto newPanel = std::make_unique<EmployeesPanel>(db);
+    // manager_panels.push_back(std::move(newPanel));
         gui.render();
 
         ImGui::Render();

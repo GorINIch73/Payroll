@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 4.0)
 project(Payroll)
 
+
+set(CMAKE_BUILD_TYPE Debug)
+
+# add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+# add_link_options(-fsanitize=address)
+
+
 # Настройка компилятора для Windows
 set(CMAKE_CXX_STANDARD 17)
 
@@ -73,8 +80,8 @@ add_executable(Payroll
     src/EmployeesPanel.cpp
     src/IndividualsPanel.cpp
     src/PositionsPanel.cpp
-    #src/EmployeeListPanel.cpp
-    #src/EmployeeEditPanel.cpp
+    src/ReviewPanel.cpp
+    src/Manager.cpp
 
     src/Settings.cpp  
     src/PdfExporter.cpp  

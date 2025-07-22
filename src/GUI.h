@@ -11,6 +11,8 @@
 
 // #include "EmployeeEditPanel.h"
 
+// extern std::vector<std::unique_ptr<Panel>> manager_panels;
+
 class GUI {
     public:
         GUI(GLFWwindow *w);

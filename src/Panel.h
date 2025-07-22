@@ -27,5 +27,6 @@ class Panel {
 // bool push_panel(Panel *pnl);
 // bool remove_panel();
 
-static std::vector<std::unique_ptr<Panel>> manager_panels;
+// inline std::vector<std::unique_ptr<Panel>> manager_panels;
+// inline std::vector<std::shared_ptr<Panel>> manager_panels;
 

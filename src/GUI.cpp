@@ -5,6 +5,7 @@
 #include "IndividualsPanel.h"
 #include "Panel.h"
 #include "PositionsPanel.h"
+#include "Manager.h"
 
 #include "ImGuiFileDialog.h"
 #include "PdfExporter.h"
@@ -15,6 +16,8 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <memory>
+#include <utility>
 
 // #include <imgui_internal.h>
 
@@ -125,36 +128,97 @@ void GUI::render() {
         // Вкладки
         
         int numTab = 0;
-        for (auto panel = manager_panels.begin(); panel != manager_panels.end();) {
+
+        // std::cout << " manager " << (*panel)->getName();
+        
+        // for (auto panel = manager_panels.begin(); panel != manager_panels.end();) {
+
+        for (size_t i = 0; i < manager_panels.size();) {
+            Panel* panel = manager_panels[i].get();
+            if (!panel) {  // Проверка на nullptr (на всякий случай)
+                std::cerr << "Null pointer at Panel" << __LINE__ << std::endl;
+                break;
+                // panel->update();  // Вызов метода панели
+            }
+            
+        
+            // if (!(*panel)) {
+            //     std::cerr << "Null pointer at Panel" << __LINE__ << std::endl;
+            //     break;
+            // }
+
+            // std::cout << numTab ;
+            // std::cout << " Panel " << panel->getName();
+            
+
 
             std::string name;
-            name = name + std::to_string(numTab) + " " + (*panel)->getName();
+            name = name + std::to_string(numTab) + " " + panel->getName();
             // std::string name = "таб " + std::to_string(numTab);
             
             // Устанавливаем флаг выбора для последней вкладки
             ImGuiTabItemFlags flags =  0;
-            if (goEndPanel && (panel == std::prev(manager_panels.end()))) {
+            if (goEndPanel && i == manager_panels.size()-1) {
                 goEndPanel = false;
                 flags = ImGuiTabItemFlags_SetSelected;
                 // std::cout << "go last panels " << (*panel)->getName() << std::endl;
             }
 
-            if (ImGui::BeginTabItem(name.c_str(), &(*panel)->getIsOpen(),
+            if (ImGui::BeginTabItem(name.c_str(), &panel->getIsOpen(),
                                     ImGuiTabItemFlags_UnsavedDocument | flags )) {
 
-                (*panel)->render();
+                // std::cout << " - render start ... " ;
+                panel->render();
+                // std::cout << " -- done" << std::endl;
                 ImGui::EndTabItem();
             }
-            if (!(*panel)->getIsOpen()) {
-                printf("%s был закрыт\n",(*panel)->getName());
-                panel = manager_panels.erase(panel);
+            if (!panel->getIsOpen()) {
+                printf("%s close\n",panel->getName());
+                removePanel(i);
                 // Действие при закрытии Tab
 
             } else {
-                ++panel;
+                ++i;
             }
 
             numTab++;
+
+
+
+
+
+
+        // старый код по итераторам не работает нормально при добавлении панели извне
+            // std::string name;
+            // name = name + std::to_string(numTab) + " " + (*panel)->getName();
+            // // std::string name = "таб " + std::to_string(numTab);
+            //
+            // // Устанавливаем флаг выбора для последней вкладки
+            // ImGuiTabItemFlags flags =  0;
+            // if (goEndPanel && (panel == std::prev(manager_panels.end()))) {
+            //     goEndPanel = false;
+            //     flags = ImGuiTabItemFlags_SetSelected;
+            //     // std::cout << "go last panels " << (*panel)->getName() << std::endl;
+            // }
+            //
+            // if (ImGui::BeginTabItem(name.c_str(), &(*panel)->getIsOpen(),
+            //                         ImGuiTabItemFlags_UnsavedDocument | flags )) {
+            //
+            //     std::cout << " - render start ... " ;
+            //     (*panel)->render();
+            //     std::cout << " -- done" << std::endl;
+            //     ImGui::EndTabItem();
+            // }
+            // if (!(*panel)->getIsOpen()) {
+            //     printf("%s close\n",(*panel)->getName());
+            //     panel = manager_panels.erase(panel);
+            //     // Действие при закрытии Tab
+            //
+            // } else {
+            //     ++panel;
+            // }
+            //
+            // numTab++;
 
         }
         ImGui::EndTabBar();
@@ -164,30 +228,39 @@ void GUI::render() {
     // Рендерим все активные панели
 }
 
+
 void GUI::addEmployeesPanel() {
 // сотрудники
-    auto newPanel = std::make_unique<EmployeesPanel>(db);
-    newPanel->getIsOpen() = true;
 
-    manager_panels.push_back(std::move(newPanel));
+
+    auto newPanel = std::make_unique<EmployeesPanel>(db);
+    addPanel(std::move(newPanel));
+
+    // auto newPanel = std::make_shared<EmployeesPanel>(db);
+    // manager_panels.push_back(newPanel);
+    // auto newPanel = std::make_unique<EmployeesPanel>(db);
+    // manager_panels.push_back(std::move(newPanel));
     goEndPanel = true;
 }
 
 void GUI::addPositionsPanel() {
     // Добавляем пнель должностей
     auto newPanel = std::make_unique<PositionsPanel>(db);
-    newPanel->getIsOpen() = true;
+    addPanel(std::move(newPanel));
+    // newPanel->getIsOpen() = true;
+    //
 
-    manager_panels.push_back(std::move(newPanel));
+    // manager_panels.push_back(std::move(newPanel));
     goEndPanel = true;
 }
 
 void GUI::addIndividualsPanel() {
     // Добавляем пнель физлиц
     auto newPanel = std::make_unique<IndividualsPanel>(db);
-    newPanel->getIsOpen() = true;
+    addPanel(std::move(newPanel));
+    // newPanel->getIsOpen() = true;
 
-    manager_panels.push_back(std::move(newPanel));
+    // manager_panels.push_back(std::move(newPanel));
     goEndPanel = true;
 }
 

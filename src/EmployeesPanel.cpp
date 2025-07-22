@@ -1,7 +1,11 @@
 
 #include "EmployeesPanel.h"
+#include "Panel.h"
+#include "ReviewPanel.h"
+#include "PositionsPanel.h"
 #include "Icons.h"
 #include "imgui_stdlib.h"
+#include "Manager.h"
 #include <algorithm>
 // #include <cfloat>
 // #include <charconv>
@@ -10,9 +14,11 @@
 #include <imgui.h>
 #include <iostream>
 // #include <ostream>
+#include <memory>
 #include <string>
 // #include <unicode/uchar.h> // Для ICU библиотеки
 #include <unicode/utf8.h>
+#include <utility>
 
 #include "imgui_components.h"
 
@@ -281,7 +287,36 @@ void EmployeesPanel::render() {
         ImGui::EndTooltip();
     }
 
-    // }
+    // Отчет по запросу
+    ImGui::SameLine();
+    // добавление записи
+    ImGui::PushStyleColor(ImGuiCol_Button,
+                          ImVec4(0.2f, 0.7f, 0.5f, 1.0f)); // 
+    if (ImGui::Button(ICON_FA_LIST)) {
+        
+
+    // Добавляем пнель должностей
+//         auto newPanel = std::make_unique<ReviewPanel>(db,"SELECT * FROM Employees");
+
+  //       manager_panels.push_back(std::move(newPanel));
+    
+    // Добавляем пнель должностей
+    // auto newPanel = std::make_unique<PositionsPanel>(db);
+    // manager_panels.push_back(std::move(newPanel));
+
+    auto newPanel = std::make_unique<PositionsPanel>(db);
+    addPanel(std::move(newPanel));
+        // manager_panels.push_back(newPanel);  // Можно копировать (счётчик ссылок)
+
+    // std::cout << "add panel view" << std::endl;
+    }
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Отчет по запросу");
+    }
+    ImGui::PopStyleColor();
+    
+
     // ImGui::End();
 
     ImGui::EndGroup();
@@ -476,5 +511,6 @@ void EmployeesPanel::render() {
 
     //    ImGui::End();
 
+    // std::cout << ". ";
     ImGui::EndChild();
 }
