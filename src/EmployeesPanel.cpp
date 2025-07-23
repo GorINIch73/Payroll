@@ -295,20 +295,13 @@ void EmployeesPanel::render() {
     if (ImGui::Button(ICON_FA_LIST)) {
         
 
-    // Добавляем пнель должностей
-//         auto newPanel = std::make_unique<ReviewPanel>(db,"SELECT * FROM Employees");
-
-  //       manager_panels.push_back(std::move(newPanel));
-    
-    // Добавляем пнель должностей
+    // Добавляем пнель запроса
+    auto newPanel = std::make_unique<ReviewPanel>(db,"SELECT e.id, i.full_name, p.job_title, e.rate, e.contract,"
+                                                  "e.contract_found, e.certificate_found, e.note FROM  Employees e "
+                                                  "LEFT JOIN Individuals i ON e.individual_id = i.id LEFT JOIN Positions p ON e.position_id = p.id");
     // auto newPanel = std::make_unique<PositionsPanel>(db);
-    // manager_panels.push_back(std::move(newPanel));
-
-    auto newPanel = std::make_unique<PositionsPanel>(db);
-    addPanel(std::move(newPanel));
-        // manager_panels.push_back(newPanel);  // Можно копировать (счётчик ссылок)
-
-    // std::cout << "add panel view" << std::endl;
+    manager_panels.addPanel(std::move(newPanel));
+    manager_panels.getNextEnd()=true;
     }
 
     if (ImGui::IsItemHovered()) {

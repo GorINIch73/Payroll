@@ -5,6 +5,7 @@
 #include <algorithm>
 // #include <cfloat>
 // #include <charconv>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <imgui.h>
@@ -73,7 +74,7 @@ void ReviewPanel::render() {
     // bool goBottom = false;
     // bool focusFirst = false;
 
-    std::cout << "render SQL Review." << std::endl;
+    // std::cout << "render SQL Review." << std::endl;
     
     ImGui::BeginChild(name.c_str());
 
@@ -102,18 +103,30 @@ void ReviewPanel::render() {
     if (!data.empty()) {
             if (ImGui::BeginTable("Database Table", data[0].columns.size(), ImGuiTableFlags_Borders)) {
                 // Заголовки столбцов
-                for (const auto& columnName : data[0].columns) {
-                    ImGui::TableSetupColumn(columnName.c_str());
+                // for (const auto& columnName : data[0].columns) {
+                //     ImGui::TableSetupColumn(columnName.c_str());
+                // }
+                // ImGui::TableHeadersRow();
+
+                for (int i = 0; i < data[0].columns.size();++i) {
+                    ImGui::TableSetupColumn(std::to_string(i).c_str());
                 }
                 ImGui::TableHeadersRow();
-
+                // std::cout << "table ... " << std::endl;
                 // Данные таблицы
                 for (const auto& row : data) {
+                    // std::cout << " reow ... " << std::endl;
                     ImGui::TableNextRow();
+                    size_t i =0;
                     for (const auto& cell : row.columns) {
-                        ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex());
+                        // std::cout << " | ";
+                        ImGui::TableSetColumnIndex(i);
+                        // ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex());
+                        // std::cout << " " << cell.c_str();
                         ImGui::Text("%s", cell.c_str());
+                        ++i;
                     }
+                        // std::cout << " <> " << std::endl;
                 }
                 ImGui::EndTable();
             }

@@ -30,7 +30,7 @@ class GUI {
         bool showSettings = false;
         bool showAbout = false;
         bool showFileDialog = false;
-        bool goEndPanel = false;
+        // bool goEndPanel  = false;
 
 
         void addEmployeesPanel();
