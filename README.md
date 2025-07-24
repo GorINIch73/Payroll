@@ -7,6 +7,7 @@ git clone -b docking https://github.com/ocornut/imgui.git  thirdparty/imgui
 git clone https://github.com/aiekick/ImGuiFileDialog.git thirdparty/ImGuiFileDialog
 git clone --depth=1 https://github.com/libharu/libharu.git thirdparty/libharu
 git clone --depth=1 https://github.com/nlohmann/json.git thirdparty/json
+git clone https://github.com/dacap/clip.git thirdparty/clip
 ```
 
 ## фонты
@@ -44,10 +45,7 @@ cmake -G "MinGW Makefiles" ..
 ``` bash
 cmake --build . 
 ```
-## дополнительно
-некоторые dll нужно положить руками
 
-библиотеку build\libharu-install\bin\libhpdf.dll нужно с билд руками кинуть подумаю позже
 
 ## для релиза
 ``` bash

@@ -21,6 +21,8 @@ class ReviewPanel : public Panel {
         ReviewPanel(Database &db,std::string qr);
         ~ReviewPanel();
         void render() override;
+        void CopySelectionToClipboard();
+        float CalculateSelectionSum();
         
         void refresh();
 
@@ -30,7 +32,18 @@ class ReviewPanel : public Panel {
         std::vector<TableRow> data;
         
         std::string query;
+    // std::vector<std::vector<std::string>> rows;
+    // std::vector<std::string> headers;
+        std::vector<bool> column_filter_enabled;
+        std::vector<std::string> column_filters;
+        ImGuiTextFilter global_filter;
 
-        // int selectedIndex = -1;
-        // int oldIndex = -1; // для отслеживание изменения выделенной строки
+        int selectedIndex = -1;
+
+        ImVec2 selection_start = {-1, -1};  // Начало выделения
+        ImVec2 selection_end = {-1, -1};    // Конец выделения
+        bool waiting_for_end = false;       // Ожидаем второй клик?
+
+        ImU32 start_cell_color = ImGui::GetColorU32(ImGuiCol_ButtonHovered); // Цвет начальной ячейк
+    
 };

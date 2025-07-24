@@ -22,7 +22,7 @@ find_package(glfw3 REQUIRED)
 find_package(SQLite3 REQUIRED)
 #find_package(HPDF REQUIRED)
 
-
+# Для отчетов в PDF
 # LibHaru для pdf git clone --depth=1 https://github.com/libharu/libharu.git thirdparty/libharu
 add_subdirectory(thirdparty/libharu)
 # include(ExternalProject)
@@ -36,7 +36,7 @@ set(LIBHARU_INCLUDE_DIR_CONF ${CMAKE_BINARY_DIR}/thirdparty/libharu/include)
 #     set(LIBHARU_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/libharu/libhpdf.so)
 # endif()
 
-
+# Для файла настроек
 # json для файла конфигурации git clone --depth=1 https://github.com/nlohmann/json.git thirdparty/json 
 add_subdirectory(thirdparty/json)
 
@@ -50,6 +50,23 @@ set(JSON_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/json/include)
 #     "${GLAD_DIR}/src/*.cpp"
 # )
 #
+
+
+# Для буфкра обмена
+# clip  -  git cgit clone https://github.com/dacap/clip.git thirdparty/clip 
+# add_compile_definitions(CLIP_WIC_SUPPORT=false)
+# add_compile_definitions(CLIP_WIC_SUPPORT=false)
+# target_compile_definitions(clip PRIVATE CLIP_WIC_SUPPORT=false)
+# Отключаем WIC поддержку в clip
+
+# add_compile_definitions(CLIP_WIC_SUPPORT=false)
+
+option(CLIP_ENABLE_IMAGE "CPIL IMAGE" off)
+
+add_subdirectory(thirdparty/clip)
+# Указываем пути к установленной библиотеке
+set(CLIP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/clip)
+
 
 
 # для IMGUI
@@ -106,6 +123,7 @@ target_include_directories(Payroll  PRIVATE
 	${LIBHARU_INCLUDE_DIR}
     ${LIBHARU_INCLUDE_DIR_CONF}
 	${JSON_INCLUDE_DIR}
+    ${CLIP_INCLUDE_DIR}
 
 	${ImGuiFileDialog_DIR}
 
@@ -115,6 +133,7 @@ target_include_directories(Payroll  PRIVATE
 target_link_libraries(Payroll PRIVATE
     glfw
     hpdf
+    clip
     ${OPENGL_LIBRARIES}
     ${SQLite3_LIBRARY} 
 )
@@ -135,6 +154,23 @@ add_custom_command(
 )
 
 
+# копируем библиотеку clip
+if(WIN32)
+    # Копируем DLL после сборки
+    add_custom_command(
+        TARGET Payroll POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/clip/libclip.dll
+            ${CMAKE_CURRENT_BINARY_DIR}/
+    )
+else()
+
+    # Копируем .so в папку сборки
+    file(COPY 
+        ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libclip/libclip.so # не проверял
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+    )
+endif()
 # копируем библиотеку libharu
 if(WIN32)
     # Копируем DLL после сборки
