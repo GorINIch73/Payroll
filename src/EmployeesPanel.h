@@ -12,7 +12,10 @@ struct Employee {
         std::string individual = "";
         int position_id = -1;
         std::string position = "";
+        double salary = 0.0f;
         double rate = 0.0f;
+        int division_id = -1;
+        std::string division = "";
         std::string contract = "";
         bool contract_found = false;
         bool certificate_found = false;
@@ -40,6 +43,7 @@ class EmployeesPanel : public Panel {
         std::vector<Employee> employees;    // основная таблица
         std::vector<ComboItem> individuals; // таблица физлиц для комбо
         std::vector<ComboItem> positions;   // таблица должностей для комбо
+        std::vector<ComboItem> divisions;   // таблица отделений для комбо
 
         int selectedIndex = -1;
         Employee currentRecord;

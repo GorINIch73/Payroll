@@ -68,6 +68,12 @@ bool Database::CreateNewDatabase() {
         note      TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS Divisions (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        division_name TEXT,
+        note          TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS Orders (
         id             INTEGER PRIMARY KEY AUTOINCREMENT
                                NOT NULL,
@@ -102,6 +108,8 @@ bool Database::CreateNewDatabase() {
         position_id       INTEGER REFERENCES Positions (id) ON DELETE NO ACTION
                                                             ON UPDATE NO ACTION,
         rate              REAL    DEFAULT (1),
+        division_id       INTEGER REFERENCES Divisions (id) ON DELETE NO ACTION
+                                                        ON UPDATE NO ACTION,
         contract          TEXT,
         contract_found    INTEGER DEFAULT (0),
         certificate_found INTEGER DEFAULT (0),
