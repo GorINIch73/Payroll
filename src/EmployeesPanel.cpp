@@ -4,6 +4,7 @@
 #include "ReviewPanel.h"
 #include "PositionsPanel.h"
 #include "IndividualsPanel.h"
+#include "DivisionsPanel.h"
 #include "Icons.h"
 #include "imgui_stdlib.h"
 #include "Manager.h"
@@ -319,8 +320,8 @@ void EmployeesPanel::render() {
     ImGui::SameLine();
     ImGui::Text("Фильтр:");
     ImGui::SameLine();
-    global_filter.Draw("##global_filter", ImGui::GetContentRegionAvail().x*0.8f);
-    // global_filter.Draw("##global_filter", 300);
+    global_filter.Draw("##global_filter", ImGui::GetContentRegionAvail().x-100);
+    // global_filter.Draw("##global_filter", ImGui::GetContentRegionAvail().x*0.8f);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Фильтр");
     }   
@@ -362,6 +363,8 @@ void EmployeesPanel::render() {
     // поля редактирования
     // ImGui::SeparatorText("редактор");
 
+    ImGui::Separator();
+    
     ImGui::Text("%s %d", "ID :", currentRecord.id);
     // если нужно, то вокус на поле ввода
     if (focusFirst) {
@@ -376,7 +379,7 @@ void EmployeesPanel::render() {
     // открыть панель физлиц
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.5f, 0.2f, 1.0f)); // Зеленый
-    if (ImGui::Button(ICON_FA_GROUP)) {
+    if (ImGui::Button(ICON_FA_USER)) {
         auto newPanel = std::make_unique<IndividualsPanel>(db);
         manager_panels.addPanel(std::move(newPanel));
         manager_panels.getNextEnd()=true;
@@ -440,18 +443,18 @@ void EmployeesPanel::render() {
     ImGui::Text("Отделение:");
     ImGui::SameLine();
     // открыть панель отделений
-    // ImGui::PushStyleColor(ImGuiCol_Button,
-    //                       ImVec4(0.2f, 0.5f, 0.2f, 1.0f)); // Зеленый
-    // if (ImGui::Button(ICON_FA_GROUP)) {
-    //     auto newPanel = std::make_unique<DivisionsPanel>(db);
-    //     manager_panels.addPanel(std::move(newPanel));
-    //     manager_panels.getNextEnd()=true;
-    // }
-    // if (ImGui::IsItemHovered()) {
-    //     ImGui::SetTooltip("Отделения");
-    // }
-    // ImGui::PopStyleColor();
-    // ImGui::SameLine();
+    ImGui::PushStyleColor(ImGuiCol_Button,
+                          ImVec4(0.2f, 0.5f, 0.2f, 1.0f)); // Зеленый
+    if (ImGui::Button(ICON_FA_DIVISIONS)) {
+        auto newPanel = std::make_unique<DivisionsPanel>(db);
+        manager_panels.addPanel(std::move(newPanel));
+        manager_panels.getNextEnd()=true;
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Отделения");
+    }
+    ImGui::PopStyleColor();
+    ImGui::SameLine();
     // комбобокс с фильтром
     if (ComboWithFilter("##DIV", &currentRecord.division_id, divisions)) {
         // Обработка изменения выбора

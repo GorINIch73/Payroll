@@ -96,7 +96,9 @@ add_executable(Payroll
     src/imgui_components.cpp
     src/EmployeesPanel.cpp
     src/IndividualsPanel.cpp
+    src/DivisionsPanel.cpp
     src/PositionsPanel.cpp
+    src/AccrualsPanel.cpp
     src/ReviewPanel.cpp
     src/Manager.cpp
 

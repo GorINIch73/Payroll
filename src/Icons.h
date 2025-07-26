@@ -30,6 +30,9 @@
 #define ICON_FA_LIST_ALT u8"\uf298"  // список в рамке
 #define ICON_FA_DATA_BASE u8"\uf1c0"  // база данных
 #define ICON_FA_ERASER u8"\uf12d"  // стерка
+#define ICON_FA_USER_MD u8"\uf0f0"  // медик
+#define ICON_FA_DIVISIONS u8"\uf0e8"  // блок схема
+#define ICON_FA_MONEY u8"\uf0d6"  // купюра
 
 // Диапазон иконок для ImGui
 // static const ImWchar icons_ranges[] = {

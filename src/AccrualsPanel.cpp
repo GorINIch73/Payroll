@@ -1,5 +1,5 @@
 
-#include "IndividualsPanel.h"
+#include "AccrualsPanel.h"
 #include "Icons.h"
 #include "imgui_stdlib.h"
 #include <algorithm>
@@ -15,21 +15,25 @@
 #include "imgui_components.h"
 #include <unicode/utf8.h>
 
-IndividualsPanel::IndividualsPanel(Database &db)
-    : Panel("Справочник физлиц"),
+AccrualsPanel::AccrualsPanel(Database &db)
+    : Panel("Справочник начислений"),
       db(db) {
     refresh();
     // std::cout << "проехали конструктор " << std::endl;
 }
-IndividualsPanel::~IndividualsPanel() { writeToDatabase(); }
+AccrualsPanel::~AccrualsPanel() { writeToDatabase(); }
 
-bool IndividualsPanel::writeToDatabase() {
+bool AccrualsPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
     std::string sql;
     if (isCurrentChanged()) {
-        sql = "UPDATE Individuals SET full_name='" + currentRecord.full_name +
-              "', note='" + currentRecord.note +
-              "' WHERE id=" + std::to_string(currentRecord.id) + ";";
+        sql = "UPDATE Accruals SET name='" + currentRecord.name +
+
+            "', percentage=" + std::to_string(currentRecord.percentage) + 
+
+            ", depends_hours_worked=" + std::to_string(currentRecord.depends_hours_worked ? 1 : 0) +
+            ", note='" + currentRecord.note +
+            "' WHERE id=" + std::to_string(currentRecord.id) + ";";
 
         // std::cout << currentRecord.note << std::endl;
         // std::cout << sql << std::endl;
@@ -41,19 +45,19 @@ bool IndividualsPanel::writeToDatabase() {
     return false;
 }
 
-bool IndividualsPanel::addRecord() {
+bool AccrualsPanel::addRecord() {
     // добавление новой записи в базу
     std::string sql;
-    sql = "INSERT INTO Individuals (full_name) VALUES ( '');";
+    sql = "INSERT INTO Accruals (name) VALUES ( '');";
     return db.Execute(sql);
 }
 
-bool IndividualsPanel::delRecord() {
+bool AccrualsPanel::delRecord() {
     // удаление текущей записи
     // хз надо ли контролить зависимые записи или пусть пустыми остаются
     if (currentRecord.id >= 0) {
         std::string sql;
-        sql = "DELETE FROM Individuals WHERE id =" +
+        sql = "DELETE FROM Accruals WHERE id =" +
               std::to_string(currentRecord.id) + ";";
         return db.Execute(sql);
     }
@@ -61,23 +65,26 @@ bool IndividualsPanel::delRecord() {
     return false;
 }
 
-void IndividualsPanel::refresh() {
-    individuals.clear();
+void AccrualsPanel::refresh() {
+    accruals.clear();
     // Загружаем данные из БД (упрощенный пример)
-    const char *sql = "SELECT id, full_name, note FROM Individuals;";
+    const char *sql = "SELECT id, name, percentage, depends_hours_worked, note FROM Accruals;";
     sqlite3_exec(
         db.getHandle(), sql,
         [](void *data, int argc, char **argv, char **) {
-            auto *list = static_cast<std::vector<Individual> *>(data);
+            auto *list = static_cast<std::vector<Accrual> *>(data);
             // не забываем проверять текстовые поля на NULL
-            list->emplace_back(Individual{std::stoi(argv[0]), argv[1],
-                                          argv[2] ? argv[2] : ""});
+            list->emplace_back(Accrual{std::stoi(argv[0]),
+                argv[1] ? argv[1] : "",
+                argv[2] ? std::stod(argv[2]) : 0,
+                argv[3] ? (std::stoi(argv[3]) > 0 ? true : false) : false,
+                argv[4] ? argv[4] : ""});
             return 0;
         },
-        &individuals, nullptr);
+        &accruals, nullptr);
 }
 
-bool IndividualsPanel::isCurrentChanged() {
+bool AccrualsPanel::isCurrentChanged() {
 
     // если индексы не определены
     if (currentRecord.id < 0)
@@ -87,23 +94,27 @@ bool IndividualsPanel::isCurrentChanged() {
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << individuals[oldIndex].note << std::endl;
+    // std::cout << " старое :" << accruals[oldIndex].note << std::endl;
 
     // срапвниваем поля
-    if (currentRecord.full_name != individuals[oldIndex].full_name)
+    if (currentRecord.name != accruals[oldIndex].name)
         return true;
-    if (currentRecord.note != individuals[oldIndex].note)
+    if (currentRecord.percentage != accruals[oldIndex].percentage)
+        return true;
+    if (currentRecord.depends_hours_worked != accruals[oldIndex].depends_hours_worked)
+        return true;
+    if (currentRecord.note != accruals[oldIndex].note)
         return true;
 
     return false;
 }
 
-void IndividualsPanel::render() {
+void AccrualsPanel::render() {
     if (!isOpen)
         return;
     // проверка на существование таблицы - вдруг база пауста или не та
-    if (!db.tableExists("Individuals")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Табилца физлиц отсуствует!");
+    if (!db.tableExists("Accruals")) {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Табилца начислений отсуствует!");
         return;
     }
 
@@ -135,12 +146,12 @@ void IndividualsPanel::render() {
         addRecord();
         refresh();
         // прыгвем на последнюю запись
-        selectedIndex = individuals.size() - 1;
+        selectedIndex = accruals.size() - 1;
         goBottom = true;
         focusFirst = true;
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Добавить новое физлицо");
+        ImGui::SetTooltip("Добавить новое начисление");
     }
     ImGui::PopStyleColor();
     ImGui::SameLine();
@@ -186,7 +197,7 @@ void IndividualsPanel::render() {
         ImGui::TextColored(ImVec4(1, 1, 0, 1), "Внимание!");
         ImGui::Separator();
         ImGui::TextColored(ImVec4(1, 0, 0, 1),
-                           "Удаление выбранного сотрудника!");
+                           "Удаление выбранного начисления!");
         // ImGui::BulletText("Удаление выбранного сотрудника");
         ImGui::EndTooltip();
     }
@@ -208,12 +219,24 @@ void IndividualsPanel::render() {
         focusFirst = false;
     }
 
-    ImGui::Text("ФИО:");
+    ImGui::Text("Начисление:");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(
         ImGui::GetColumnWidth()); // Растянуть на всю колонку
-    ImGui::InputText("##ФИО", &currentRecord.full_name);
+    ImGui::InputText("##Начисление", &currentRecord.name);
     // ImGui::InputText("Примечание", &currentRecord.note);
+
+    ImGui::Text("Процент от оклада:");
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(
+        ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+        ImGui::CalcTextSize(std::to_string(currentRecord.percentage).c_str()).x);
+    ImGui::SetNextItemWidth(
+        ImGui::CalcTextSize(std::to_string(currentRecord.percentage).c_str()).x);
+    ImGui::InputDouble("##процент", &currentRecord.percentage, 0, 0, "%0.0f");
+
+
+    ToggleButton("Зависит от отработанного времени:", &currentRecord.depends_hours_worked);
 
     // мультистрочник - морока прям
     ImGui::Text("Примечание:");
@@ -231,7 +254,7 @@ void IndividualsPanel::render() {
     ImGui::Separator();
     // ImGui::PopStyleColor();
 
-    if (ImGui::BeginTable("Individuals", 3,
+    if (ImGui::BeginTable("Accruals", 5,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                               ImGuiTableFlags_RowBg |
                               ImGuiTableFlags_ScrollY)) {
@@ -240,59 +263,74 @@ void IndividualsPanel::render() {
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
                                 50.0f);
-        ImGui::TableSetupColumn("ФИО");
+        ImGui::TableSetupColumn("Начисление");
+        ImGui::TableSetupColumn("Процент",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                100.0f);
+        ImGui::TableSetupColumn("время+",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                10.0f);
         ImGui::TableSetupColumn("Примечание");
         ImGui::TableHeadersRow();
 
-        for (size_t i = 0; i < individuals.size(); ++i) {
+        for (size_t i = 0; i < accruals.size(); ++i) {
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
-            if (ImGui::Selectable(std::to_string(individuals[i].id).c_str(),
+            if (ImGui::Selectable(std::to_string(accruals[i].id).c_str(),
                                   selectedIndex == i,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
                 selectedIndex = i;
             }
 
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", individuals[i].full_name.c_str());
+            ImGui::Text("%s", accruals[i].name.c_str());
+
+            // доля
             ImGui::TableSetColumnIndex(2);
+            // прижимае к правой тороне
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+            ImGui::SetCursorPosX(
+                ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+                ImGui::CalcTextSize(std::to_string(accruals[i].percentage).c_str())
+                    .x -
+                ImGui::GetStyle().ItemSpacing.x);
+            ImGui::Text("%0.0f", accruals[i].percentage);
+            ImGui::PopStyleVar();
+
+            // зависимость от времени
+            ImGui::TableSetColumnIndex(3);
+            ImGui::Text("%s", accruals[i].depends_hours_worked ? "+" : " ");
+
+
+
+            ImGui::TableSetColumnIndex(4);
             // обрабатываем многострочку - просто срезаем после возврата строки
             ImGui::Text("%s",
-                        individuals[i]
-                            .note.substr(0, individuals[i].note.find("\n"))
+                        accruals[i]
+                            .note.substr(0, accruals[i].note.find("\n"))
                             .c_str());
-            // ImGui::TableSetColumnIndex(3);
-            // // выравнивание вправо
-            // ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-            // ImGui::SetCursorPosX(
-            //     ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-            //     ImGui::CalcTextSize(
-            //         std::to_string(individuals[i].salary).c_str())
-            //         .x -
-            //     ImGui::GetStyle().ItemSpacing.x);
-            // ImGui::Text("%.2f", individuals[i].salary);
-            // ImGui::PopStyleVar();
-            //
             // выделена другая строка
             if (oldIndex != selectedIndex) {
                 // записать старые данные
                 if (writeToDatabase()) {
                     // Обновляем строку таблицы новыми данными
-                    individuals[oldIndex] = currentRecord;
+                    accruals[oldIndex] = currentRecord;
                     // printf("Запись обновлена\n");
                 }
                 // printf("старый указатель %i, новый указатель %i \n",
                 // oldIndex,
                 //        selectedEmployee);
                 // взять в редактор новые данные
-                currentRecord = individuals[selectedIndex];
+                currentRecord = accruals[selectedIndex];
                 oldIndex = selectedIndex;
             }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
-            if (goBottom && i == individuals.size() - 1) {
+            if (goBottom && i == accruals.size() - 1) {
                 ImGui::SetScrollHereY(1.0f); // 1.0f = нижний край экрана
                 goBottom = false;
             }

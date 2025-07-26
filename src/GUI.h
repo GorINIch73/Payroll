@@ -36,6 +36,8 @@ class GUI {
         void addEmployeesPanel();
         void addIndividualsPanel();
         void addPositionsPanel();
+        void addDivisionsPanel();
+        void addAccrualsPanel();
 
         void showMainMenu();
         void ShowSettings();

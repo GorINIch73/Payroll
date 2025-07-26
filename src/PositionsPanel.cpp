@@ -162,7 +162,8 @@ void PositionsPanel::render() {
                           ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
 
-        ImGui::OpenPopup("Удаление");
+        if(selectedIndex>=0)
+            ImGui::OpenPopup("Удаление");
     }
 
     ImGui::PopStyleColor();
@@ -210,6 +211,8 @@ void PositionsPanel::render() {
     // ImGui::EndChild();
     // поля редактирования
     // ImGui::SeparatorText("редактор");
+
+    ImGui::Separator();
 
     ImGui::Text("%s %d", "ID :", currentRecord.id);
     // если нужно, то вокус на поле ввода

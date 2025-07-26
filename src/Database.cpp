@@ -97,7 +97,9 @@ bool Database::CreateNewDatabase() {
         id         INTEGER PRIMARY KEY AUTOINCREMENT
                            NOT NULL,
         name       TEXT,
-        percentage REAL
+        percentage REAL,
+        depends_hours_worked INTEGER DEFAULT (0),
+        note       TEXT
     );
 
     CREATE TABLE IF NOT EXISTS Employees (

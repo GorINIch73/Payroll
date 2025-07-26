@@ -1,10 +1,13 @@
 #include "GUI.h"
+#include "DivisionsPanel.h"
 #include "Icons.h"
 #include "Database.h"
 #include "EmployeesPanel.h"
 #include "IndividualsPanel.h"
 #include "Panel.h"
 #include "PositionsPanel.h"
+#include "DivisionsPanel.h"
+#include "AccrualsPanel.h"
 #include "Manager.h"
 
 #include "ImGuiFileDialog.h"
@@ -250,6 +253,20 @@ void GUI::addPositionsPanel() {
     manager_panels.getNextEnd() = true;
 }
 
+void GUI::addAccrualsPanel() {
+    // Добавляем пнель рачислений
+    auto newPanel = std::make_unique<AccrualsPanel>(db);
+    manager_panels.addPanel(std::move(newPanel));
+    manager_panels.getNextEnd() = true;
+}
+
+void GUI::addDivisionsPanel() {
+    // Добавляем пнель отделенй
+    auto newPanel = std::make_unique<DivisionsPanel>(db);
+    manager_panels.addPanel(std::move(newPanel));
+    manager_panels.getNextEnd() = true;
+}
+
 void GUI::addIndividualsPanel() {
     // Добавляем пнель физлиц
     auto newPanel = std::make_unique<IndividualsPanel>(db);
@@ -299,7 +316,7 @@ void GUI::showMainMenu() {
         }
 
         if (ImGui::BeginMenu("Справочники")) {
-            if (ImGui::MenuItem("Сотрудники")) {
+            if (ImGui::MenuItem(ICON_FA_GROUP " Сотрудники")) {
                 addEmployeesPanel();
                 // Ищем панель в списке и открываем
                 // for (auto& panel : manager_panels) {
@@ -309,11 +326,17 @@ void GUI::showMainMenu() {
                 //     }
                 // }
             }
-            if (ImGui::MenuItem("Физлица")) {
+            if (ImGui::MenuItem(ICON_FA_USER " Физлица")) {
                 addIndividualsPanel();
             }
-            if (ImGui::MenuItem("Должности")) {
+            if (ImGui::MenuItem(ICON_FA_TIE " Должности")) {
                 addPositionsPanel();
+            }
+            if (ImGui::MenuItem(ICON_FA_DIVISIONS " Отделения")) {
+                addDivisionsPanel();
+            }
+            if (ImGui::MenuItem(ICON_FA_MONEY " Начисления")) {
+                addAccrualsPanel();
             }
             ImGui::EndMenu();
         }
