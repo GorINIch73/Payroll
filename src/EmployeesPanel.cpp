@@ -273,8 +273,8 @@ void EmployeesPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
-
-        ImGui::OpenPopup("Удаление");
+        if(selectedIndex>=0)
+            ImGui::OpenPopup("Удаление");
     }
 
     ImGui::PopStyleColor();
@@ -313,6 +313,23 @@ void EmployeesPanel::render() {
                            "Удаление выбранного сотрудника!");
         // ImGui::BulletText("Удаление выбранного сотрудника");
         ImGui::EndTooltip();
+    }
+    
+    // Глобальный фильтр
+    ImGui::SameLine();
+    ImGui::Text("Фильтр:");
+    ImGui::SameLine();
+    global_filter.Draw("##global_filter", ImGui::GetContentRegionAvail().x*0.8f);
+    // global_filter.Draw("##global_filter", 300);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Фильтр");
+    }   
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_ERASER)) {
+        global_filter.Clear();
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Очистить фильтр");
     }
 
     // Отчет по запросу
@@ -508,6 +525,25 @@ void EmployeesPanel::render() {
 
         for (size_t i = 0; i < employees.size(); ++i) {
 
+            //фильр - определяем нудна ли нам текущая строка для отображения
+
+            // Собираем всю строку в один текст для фильтрации
+            std::string row_text;
+            row_text += std::to_string(employees[i].id) + " ";
+            row_text += employees[i].individual + " ";
+            row_text += employees[i].position + " ";
+            row_text += std::to_string(employees[i].salary) + " ";
+            row_text += std::to_string(employees[i].rate) + " ";
+            row_text += employees[i].division + " ";
+            row_text += employees[i].contract + " ";
+            row_text += employees[i].note;
+            // если не совпадает с фильтром, то пропускаем строку
+            if (!global_filter.PassFilter(row_text.c_str())) {
+                continue;
+            }
+
+
+            //таблица
             ImGui::TableNextRow();
             // ID
             ImGui::TableSetColumnIndex(0);

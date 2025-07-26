@@ -45,6 +45,7 @@ class EmployeesPanel : public Panel {
         std::vector<ComboItem> positions;   // таблица должностей для комбо
         std::vector<ComboItem> divisions;   // таблица отделений для комбо
 
+        ImGuiTextFilter global_filter;  // <-- Глобальный фильтр
         int selectedIndex = -1;
         Employee currentRecord;
         int oldIndex = -1; // для отслеживание изменения выделенной строки

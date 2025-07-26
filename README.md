@@ -1,6 +1,8 @@
 # Аудит начисления заработной платы
 Пишем и изучаем IMGUI помаленьку
 
+![Eployees](images/Employees.jpg)
+
 ## настройка зависимостей
 ```bash
 git clone -b docking https://github.com/ocornut/imgui.git  thirdparty/imgui
