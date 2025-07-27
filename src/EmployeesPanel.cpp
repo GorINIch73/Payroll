@@ -390,7 +390,7 @@ void EmployeesPanel::render() {
     ImGui::PopStyleColor();
     ImGui::SameLine();
     // комбобокс с фильтром
-    if (ComboWithFilter("##ФИО", &currentRecord.individual_id, individuals)) {
+    if (ComboWithFilter("##ФИО", currentRecord.individual_id, individuals)) {
         // Обработка изменения выбора
         auto it = std::find_if(individuals.begin(), individuals.end(),
                                [&](const ComboItem &e) {
@@ -419,7 +419,7 @@ void EmployeesPanel::render() {
     ImGui::PopStyleColor();
     ImGui::SameLine();
     // комбобокс с фильтром
-    if (ComboWithFilter("##Должность", &currentRecord.position_id, positions)) {
+    if (ComboWithFilter("##Должность", currentRecord.position_id, positions)) {
         // Обработка изменения выбора
         auto itp = std::find_if(positions.begin(), positions.end(),
                                 [&](const ComboItem &e) {
@@ -456,7 +456,7 @@ void EmployeesPanel::render() {
     ImGui::PopStyleColor();
     ImGui::SameLine();
     // комбобокс с фильтром
-    if (ComboWithFilter("##DIV", &currentRecord.division_id, divisions)) {
+    if (ComboWithFilter("##DIV", currentRecord.division_id, divisions)) {
         // Обработка изменения выбора
         auto it = std::find_if(divisions.begin(), divisions.end(),
                                [&](const ComboItem &e) {
@@ -474,10 +474,10 @@ void EmployeesPanel::render() {
     ImGui::SameLine();
     ImGui::InputText("##договор", &currentRecord.contract);
 
-    ToggleButton("Договор найден:", &currentRecord.contract_found);
+    ToggleButton("Договор найден:", currentRecord.contract_found);
 
     ImGui::SameLine();
-    ToggleButton("Сертификат найден:", &currentRecord.certificate_found);
+    ToggleButton("Сертификат найден:", currentRecord.certificate_found);
 
     ImGui::Text("Примечание:");
     // текст с автопереносом

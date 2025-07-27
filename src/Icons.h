@@ -33,6 +33,7 @@
 #define ICON_FA_USER_MD u8"\uf0f0"  // медик
 #define ICON_FA_DIVISIONS u8"\uf0e8"  // блок схема
 #define ICON_FA_MONEY u8"\uf0d6"  // купюра
+#define ICON_FA_ORDER u8"\uf0e3"  // приказ - колотушка
 
 // Диапазон иконок для ImGui
 // static const ImWchar icons_ranges[] = {

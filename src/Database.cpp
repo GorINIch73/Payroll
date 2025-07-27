@@ -78,9 +78,10 @@ bool Database::CreateNewDatabase() {
         id             INTEGER PRIMARY KEY AUTOINCREMENT
                                NOT NULL,
         number         TEXT,
-        date           TEXT    DEFAULT ('2000-01-01'),
+        date           TEXT    DEFAULT ('2000.01.01'),
         found          INTEGER DEFAULT (0),
-        protocol_found INTEGER DEFAULT (0) 
+        protocol_found INTEGER DEFAULT (0),
+        note           TEXT
     );
 
 
@@ -98,7 +99,7 @@ bool Database::CreateNewDatabase() {
                            NOT NULL,
         name       TEXT,
         percentage REAL,
-        depends_hours_worked INTEGER DEFAULT (0),
+        this_salary INTEGER DEFAULT (0),
         note       TEXT
     );
 
@@ -126,7 +127,8 @@ bool Database::CreateNewDatabase() {
         employee_id        INTEGER REFERENCES Employees (id) 
                                    NOT NULL,
         hours_worked       REAL    DEFAULT (0),
-        timesheet_verified INTEGER DEFAULT (0) 
+        timesheet_verified INTEGER DEFAULT (0),
+        note           TEXT
     );
 
 

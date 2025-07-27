@@ -38,6 +38,7 @@ class GUI {
         void addPositionsPanel();
         void addDivisionsPanel();
         void addAccrualsPanel();
+        void addOrdersPanel();
 
         void showMainMenu();
         void ShowSettings();

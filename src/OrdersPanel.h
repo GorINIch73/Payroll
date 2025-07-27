@@ -5,18 +5,19 @@
 #include <utility>
 #include <vector>
 
-struct Accrual {
+struct Order {
         int id = -1;
-        std::string name = "";
-        double percentage = 0;
-        bool  this_salary = false;
+        std::string number = "";
+        std::string date = "2000.01.01";
+        bool  found = false;
+        bool  protocol_found = false;
         std::string note = "";
 };
 
-class AccrualsPanel : public Panel {
+class OrdersPanel : public Panel {
     public:
-        AccrualsPanel(Database &db);
-        ~AccrualsPanel();
+        OrdersPanel(Database &db);
+        ~OrdersPanel();
         void render() override;
         void refresh();
         bool writeToDatabase();
@@ -26,8 +27,8 @@ class AccrualsPanel : public Panel {
 
     private:
         Database &db;
-        std::vector<Accrual> accruals;
+        std::vector<Order> orders;
         int selectedIndex = -1;
-        Accrual currentRecord;
+        Order currentRecord;
         int oldIndex = -1; // для отслеживание изменения выделенной строки
 };

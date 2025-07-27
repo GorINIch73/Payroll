@@ -99,6 +99,7 @@ add_executable(Payroll
     src/DivisionsPanel.cpp
     src/PositionsPanel.cpp
     src/AccrualsPanel.cpp
+    src/OrdersPanel.cpp
     src/ReviewPanel.cpp
     src/Manager.cpp
 

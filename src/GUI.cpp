@@ -4,6 +4,7 @@
 #include "Database.h"
 #include "EmployeesPanel.h"
 #include "IndividualsPanel.h"
+#include "OrdersPanel.h"
 #include "Panel.h"
 #include "PositionsPanel.h"
 #include "DivisionsPanel.h"
@@ -267,6 +268,13 @@ void GUI::addDivisionsPanel() {
     manager_panels.getNextEnd() = true;
 }
 
+void GUI::addOrdersPanel() {
+    // Добавляем пнель отделенй
+    auto newPanel = std::make_unique<OrdersPanel>(db);
+    manager_panels.addPanel(std::move(newPanel));
+    manager_panels.getNextEnd() = true;
+}
+
 void GUI::addIndividualsPanel() {
     // Добавляем пнель физлиц
     auto newPanel = std::make_unique<IndividualsPanel>(db);
@@ -318,13 +326,9 @@ void GUI::showMainMenu() {
         if (ImGui::BeginMenu("Справочники")) {
             if (ImGui::MenuItem(ICON_FA_GROUP " Сотрудники")) {
                 addEmployeesPanel();
-                // Ищем панель в списке и открываем
-                // for (auto& panel : manager_panels) {
-                //     if (panel->getName() == "Справочник сотрудников") {
-                //         panel->getIsOpen() = true;
-                //         break;
-                //     }
-                // }
+            }
+            if (ImGui::MenuItem(ICON_FA_ORDER " Приказы")) {
+                addOrdersPanel();
             }
             if (ImGui::MenuItem(ICON_FA_USER " Физлица")) {
                 addIndividualsPanel();

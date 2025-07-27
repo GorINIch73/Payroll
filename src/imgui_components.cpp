@@ -3,11 +3,13 @@
 #include <imgui.h>
 #include <string>
 #include <vector>
-
+#include <array>
+#include <iostream>
+#include <cstdio>
 #include <unicode/utf8.h>
 
 // реализация кастомного чекбокса
-bool ToggleButton(const char *label, bool *v) {
+bool ToggleButton(const char *label, bool &v) {
 
     ImGui::TextUnformatted(label);
     ImGui::SameLine();
@@ -21,11 +23,11 @@ bool ToggleButton(const char *label, bool *v) {
     float radius = height * 0.50f;
 
     if (ImGui::InvisibleButton(label, ImVec2(width, height))) {
-        *v = !*v;
+        v = !v;
     }
 
-    float t = *v ? 1.0f : 0.0f;
-    ImU32 col_bg = ImGui::GetColorU32(*v ? ImVec4(0.23f, 0.73f, 0.23f, 1.0f)
+    float t = v ? 1.0f : 0.0f;
+    ImU32 col_bg = ImGui::GetColorU32(v ? ImVec4(0.23f, 0.73f, 0.23f, 1.0f)
                                          : ImVec4(0.73f, 0.23f, 0.23f, 1.0f));
 
     draw_list->AddRectFilled(p, ImVec2(p.x + width, p.y + height), col_bg,
@@ -34,7 +36,7 @@ bool ToggleButton(const char *label, bool *v) {
         ImVec2(p.x + radius + t * (width - radius * 2.0f), p.y + radius),
         radius - 1.5f, IM_COL32(255, 255, 255, 255));
 
-    return *v;
+    return v;
 }
 
 // реализация текстового пля ввода с посимвольным автопереносом
@@ -92,7 +94,7 @@ bool InputTextWrapper(const char *label, std::string &text, float width) {
 
 // реализация комбобокса с фильром
 //
-bool ComboWithFilter(const char *label, int *current_id,
+bool ComboWithFilter(const char *label, int &current_id,
                      std::vector<ComboItem> &items, ImGuiComboFlags flags) {
     bool changed = false;
     static char search_buffer[128] = "";
@@ -102,7 +104,7 @@ bool ComboWithFilter(const char *label, int *current_id,
     std::string preview = "Не выбрано";
     auto current_it =
         std::find_if(items.begin(), items.end(),
-                     [&](const ComboItem &i) { return i.id == *current_id; });
+                     [&](const ComboItem &i) { return i.id == current_id; });
     if (current_it != items.end()) {
         preview = current_it->name;
     }
@@ -131,7 +133,7 @@ bool ComboWithFilter(const char *label, int *current_id,
             if (!items.empty()) {
                 if (search_buffer[0] == '\0') {
                     // Если строка пустая - выбираем первый элемент
-                    *current_id = items[0].id;
+                    current_id = items[0].id;
                 } else {
                     // Ищем первый подходящий элемент
                     auto it = std::find_if(
@@ -140,7 +142,7 @@ bool ComboWithFilter(const char *label, int *current_id,
                                    std::string::npos;
                         });
                     if (it != items.end()) {
-                        *current_id = it->id;
+                        current_id = it->id;
                     }
                 }
                 changed = true;
@@ -184,12 +186,12 @@ bool ComboWithFilter(const char *label, int *current_id,
                                     30,
                                 200.0f)))) {
             for (auto item : filtered_items) {
-                bool is_selected = (*current_id == item->id);
+                bool is_selected = (current_id == item->id);
                 // Пропускаем или обрабатываем пустые элементы
                 if (ImGui::Selectable(
                         (!item->name.empty() ? item->name.c_str() : "-ПУСТО-"),
                         is_selected)) {
-                    *current_id = item->id;
+                    current_id = item->id;
                     changed = true;
                     search_buffer[0] = '\0'; // Сброс поиска
                     ImGui::CloseCurrentPopup();
@@ -214,7 +216,7 @@ bool ComboWithFilter(const char *label, int *current_id,
             });
 
         if (exact_match != items.end()) {
-            *current_id = exact_match->id;
+            current_id = exact_match->id;
             changed = true;
             search_buffer[0] = '\0';
         }
@@ -228,3 +230,129 @@ bool ComboWithFilter(const char *label, int *current_id,
 
     return changed;
 }
+
+
+
+// Виджет для ввода даты с автоформатированием
+bool InputDate(const char* label, std::string &date) {
+ 
+    bool changed = false;
+    const std::string pattern = "YYYY.MM.DD";
+    constexpr size_t buf_size = 11; // "YYYY.MM.DD" + null terminator
+
+    ImGui::TextUnformatted(label);
+    ImGui::SameLine();
+    
+    // 1. Проверяем текущее значение на соответствие шаблону
+    if (date.empty()) {
+        date = "____.__.__";
+    }
+
+    // 2. Подготавливаем буфер для ImGui
+    char buf[buf_size];
+    strncpy(buf, date.c_str(), buf_size);
+    buf[buf_size-1] = '\0';
+
+    // 3. Отображаем поле ввода
+    ImGui::PushID(label);
+    ImGui::PushItemWidth(ImGui::CalcTextSize(std::string(pattern).c_str()).x);
+    if (ImGui::InputText("", buf, buf_size, ImGuiInputTextFlags_CharsDecimal)) {
+        std::string new_date = buf;
+        
+        // 4. Фильтруем ввод - оставляем только цифры и точки
+        std::string filtered;
+        for (char c : new_date) {
+            if (isdigit(c) || c == '.' || c == '_') {
+                filtered.push_back(c);
+            }
+        }
+
+        // 5. Восстанавливаем шаблон
+        std::string formatted = pattern;
+        size_t digit_pos = 0;
+        
+        // Заполняем цифрами
+        for (size_t i = 0; i < filtered.size() && digit_pos < pattern.size(); ++i) {
+            if (isdigit(filtered[i])) {
+                while (digit_pos < pattern.size() && 
+                       pattern[digit_pos] != 'Y' && 
+                       pattern[digit_pos] != 'M' && 
+                       pattern[digit_pos] != 'D') {
+                    digit_pos++;
+                }
+                if (digit_pos < pattern.size()) {
+                    formatted[digit_pos++] = filtered[i];
+                }
+            }
+        }
+
+        // 6. Валидация и корректировка значений
+        // Год (1900-2100):
+        if (formatted[0] != '_') {
+            int year = std::clamp(
+                (formatted[0]-'0')*1000 + 
+                (formatted[1]-'0')*100 + 
+                (formatted[2]-'0')*10 + 
+                (formatted[3]-'0'), 
+                1900, 2100
+            );
+            formatted.replace(0, 4, std::to_string(year));
+        }
+
+        // Месяц (1-12)
+        if (formatted[5] != '_') {
+            int month = std::clamp(
+                (formatted[5]-'0')*10 + 
+                (formatted[6]-'0'), 
+                1, 12
+            );
+            formatted.replace(5, 2, month < 10 ? "0" + std::to_string(month) : std::to_string(month));
+        }
+
+        // День (1-31 с учетом месяца)
+        if (formatted[8] != '_') {
+            int day = (formatted[8]-'0')*10 + (formatted[9]-'0');
+            int max_day = 31;
+            
+            if (formatted[5] != '_') {
+                int month = (formatted[5]-'0')*10 + (formatted[6]-'0');
+                if (month == 2) {
+                    max_day = 28; // без учета високосных
+                } else if (month == 4 || month == 6 || month == 9 || month == 11) {
+                    max_day = 30;
+                }
+            }
+            
+            day = std::clamp(day, 1, max_day);
+            formatted.replace(8, 2, day < 10 ? "0" + std::to_string(day) : std::to_string(day));
+        }
+
+        // 7. Заменяем незаполненные позиции
+        for (size_t i = 0; i < formatted.size(); ++i) {
+            if (formatted[i] == 'Y' || formatted[i] == 'M' || formatted[i] == 'D') {
+                formatted[i] = '_';
+            }
+        }
+
+        // 8. Сохраняем изменения
+        if (formatted != date) {
+            date = formatted;
+            changed = true;
+        }
+    }
+    ImGui::PopItemWidth();
+
+    // 9. Подсказка
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Формат: YYYY.MM.DD");
+    }
+    ImGui::PopID();
+    
+
+
+    return changed;
+}
+
+
+
+
