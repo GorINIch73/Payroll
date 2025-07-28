@@ -39,6 +39,7 @@ class GUI {
         void addDivisionsPanel();
         void addAccrualsPanel();
         void addOrdersPanel();
+        void addStatementsPanel();
 
         void showMainMenu();
         void ShowSettings();

@@ -9,6 +9,7 @@
 #include "PositionsPanel.h"
 #include "DivisionsPanel.h"
 #include "AccrualsPanel.h"
+#include "StatementsPanel.h"
 #include "Manager.h"
 
 #include "ImGuiFileDialog.h"
@@ -275,6 +276,13 @@ void GUI::addOrdersPanel() {
     manager_panels.getNextEnd() = true;
 }
 
+void GUI::addStatementsPanel() {
+    // Добавляем пнель ведомостей
+    auto newPanel = std::make_unique<StatementsPanel>(db);
+    manager_panels.addPanel(std::move(newPanel));
+    manager_panels.getNextEnd() = true;
+}
+
 void GUI::addIndividualsPanel() {
     // Добавляем пнель физлиц
     auto newPanel = std::make_unique<IndividualsPanel>(db);
@@ -324,6 +332,9 @@ void GUI::showMainMenu() {
         }
 
         if (ImGui::BeginMenu("Справочники")) {
+            if (ImGui::MenuItem(ICON_FA_LIST_ALT " Ведомости")) {
+                addStatementsPanel();
+            }
             if (ImGui::MenuItem(ICON_FA_GROUP " Сотрудники")) {
                 addEmployeesPanel();
             }

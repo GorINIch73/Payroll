@@ -123,7 +123,7 @@ bool Database::CreateNewDatabase() {
     CREATE TABLE IF NOT EXISTS Statements (
         id                 INTEGER PRIMARY KEY AUTOINCREMENT
                                    NOT NULL,
-        month              INTEGER DEFAULT (1),
+        month              INTEGER DEFAULT (0),
         employee_id        INTEGER REFERENCES Employees (id) 
                                    NOT NULL,
         hours_worked       REAL    DEFAULT (0),
