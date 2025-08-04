@@ -26,7 +26,7 @@
 #include "imgui_components.h"
 
 StatementsPanel::StatementsPanel(Database &db)
-    : Panel("Справочник работников"),
+    : Panel("Расчетные ведомости"),
       db(db) {
     refresh();
     // std::cout << "проехали конструктор " << std::endl;
@@ -40,9 +40,9 @@ bool StatementsPanel::writeToDatabase() {
 
     if (isCurrentChanged()) {
         sql =
-            "UPDATE Statements SET  mounth=" + std::to_string(currentRecord.month) +
+            "UPDATE Statements SET  month=" + std::to_string(currentRecord.month) +
             (currentRecord.employee_id > 0
-                 ? " employee_id=" +
+                 ? ", employee_id=" +
                        std::to_string(currentRecord.employee_id)
                  : "") +
             ", hours_worked=" + std::to_string(currentRecord.hours_worked) + 
@@ -67,7 +67,12 @@ bool StatementsPanel::writeToDatabase() {
 bool StatementsPanel::addRecord() {
     // добавление новой записи в базу
     std::string sql;
-    sql = "INSERT INTO Statements (mounth) VALUES (1);";
+    sql = "INSERT INTO Statements (month) VALUES (" + 
+        (currentRecord.month > 0
+                 ? std::to_string(currentRecord.month)
+                 : "0") +
+
+        ");";
     return db.Execute(sql);
 }
 
@@ -245,6 +250,14 @@ void StatementsPanel::render() {
     bool goBottom = false;
     bool focusFirst = false;
 
+
+    const char* months[] = { 
+        "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь" 
+    };
+
+
+
     ImGui::BeginChild(name.c_str());
 
     ImGui::BeginGroup();
@@ -385,8 +398,13 @@ void StatementsPanel::render() {
 
     ImGui::Text("Месяц:");
     ImGui::SameLine();
-    ImGui::InputInt("##месяц", &currentRecord.month);
+    // ImGui::InputInt("##месяц_", &currentRecord.month);
 
+    int current_month = currentRecord.month -1; // 1 = Январь, 12 = Декабрь
+    
+    if (ImGui::Combo("##Месяц", &current_month, months, IM_ARRAYSIZE(months))) {
+        currentRecord.month = current_month+1;    
+    }
 
     ImGui::Text("Сотрудник:");
     ImGui::SameLine();
@@ -458,7 +476,7 @@ void StatementsPanel::render() {
     ImGui::Separator();
     // ImGui::PopStyleColor();
 
-    if (ImGui::BeginTable("Statements", 10,
+    if (ImGui::BeginTable("Statements", 8,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                               ImGuiTableFlags_RowBg |
                               ImGuiTableFlags_ScrollY)) {
@@ -467,7 +485,10 @@ void StatementsPanel::render() {
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
                                 50.0f);
-        ImGui::TableSetupColumn("Месяц");
+        ImGui::TableSetupColumn("Месяц",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                200.0f);
         ImGui::TableSetupColumn("Сотрудник");
         ImGui::TableSetupColumn("Оклад",
                                 ImGuiTableColumnFlags_WidthFixed |
@@ -523,10 +544,11 @@ void StatementsPanel::render() {
                 selectedIndex = i;
             }
 
-            // ФИО
+            // месяц
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%d", statements[i].month);
-            // Должность
+            ImGui::Text("%s", statements[i].month > 0 ? months[statements[i].month-1] : "");
+            // ImGui::Text("%d", statements[i].month);
+            // сотрудник
             ImGui::TableSetColumnIndex(2);
             ImGui::Text("%s", statements[i].employee.c_str());
             // оклад
@@ -563,11 +585,11 @@ void StatementsPanel::render() {
             ImGui::Text("%0.2f", statements[i].hours_worked);
             ImGui::PopStyleVar();
 
-            // контракт найден
-            ImGui::TableSetColumnIndex(7);
+            // табель сверен
+            ImGui::TableSetColumnIndex(6);
             ImGui::Text("%s", statements[i].timesheet_verified ? "+" : " ");
             // примечание
-            ImGui::TableSetColumnIndex(9);
+            ImGui::TableSetColumnIndex(7);
             // обрабатываем многострочку - просто срезаем после возврата строки
             ImGui::Text("%s", statements[i]
                                   .note.substr(0, statements[i].note.find("\n"))

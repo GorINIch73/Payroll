@@ -124,8 +124,7 @@ bool Database::CreateNewDatabase() {
         id                 INTEGER PRIMARY KEY AUTOINCREMENT
                                    NOT NULL,
         month              INTEGER DEFAULT (0),
-        employee_id        INTEGER REFERENCES Employees (id) 
-                                   NOT NULL,
+        employee_id        INTEGER REFERENCES Employees (id),
         hours_worked       REAL    DEFAULT (0),
         timesheet_verified INTEGER DEFAULT (0),
         note           TEXT
@@ -137,8 +136,7 @@ bool Database::CreateNewDatabase() {
                              NOT NULL,
         statement_id INTEGER NOT NULL
                              REFERENCES Statements (id),
-        accrual_id   INTEGER NOT NULL
-                             REFERENCES Accruals (id),
+        accrual_id   INTEGER REFERENCES Accruals (id),
         amount       REAL    DEFAULT (0.0),
         order_id     INTEGER REFERENCES Orders (id),
         verified     INTEGER DEFAULT (0),

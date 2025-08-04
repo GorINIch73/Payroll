@@ -167,7 +167,7 @@ void GUI::render() {
                 manager_panels.getNextEnd() = false; 
                 // goEndPanel = false; 
                 flags = ImGuiTabItemFlags_SetSelected;
-                std::cout << "go last panels " << panel->getName() << std::endl;
+                // std::cout << "go last panels " << panel->getName() << std::endl;
             }
 
             if (ImGui::BeginTabItem(name.c_str(), &panel->getIsOpen(),
