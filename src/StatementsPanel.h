@@ -1,4 +1,5 @@
 #pragma once
+#include "AccrualsPanel.h"
 #include "Database.h"
 #include "Panel.h"
 #include "imgui_components.h"
@@ -41,10 +42,15 @@ class StatementsPanel : public Panel {
         ~StatementsPanel();
         void render() override;
         void refresh();
+        void refreshAccruals();
         bool writeToDatabase();
+        bool writeAccrualToDatabase();
         bool addRecord();
+        bool addAccrualRecord();
         bool delRecord();
+        bool delAccrualRecord();
         bool isCurrentChanged();
+        bool isAccrualCurrentChanged();
 
     private:
         Database &db;
@@ -58,4 +64,8 @@ class StatementsPanel : public Panel {
         int selectedIndex = -1;
         Statement currentRecord;
         int oldIndex = -1; // для отслеживание изменения выделенной строки
+
+        List_accrual currentAccrualRecord;
+        int selectedAccrualIndex = -1; // текущая строка начислений
+        int oldAccrualIndex = -1; // для отслеживание изменения выделенной строки начислений
 };

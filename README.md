@@ -1,7 +1,9 @@
 # Аудит начисления заработной платы
 Пишем и изучаем IMGUI помаленьку
 
-![Eployees](images/Employees.jpg)
+![Ведомости](images/Statements.jpg)
+
+![Сотрудники](images/Employees.jpg)
 
 ## настройка зависимостей
 ```bash
