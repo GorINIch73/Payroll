@@ -47,6 +47,7 @@ bool StatementsPanel::writeToDatabase() {
                  ? ", employee_id=" +
                        std::to_string(currentRecord.employee_id)
                  : "") +
+            ", hours_norm=" + std::to_string(currentRecord.hours_norm) + 
             ", hours_worked=" + std::to_string(currentRecord.hours_worked) + 
             ", timesheet_verified=" +
             std::to_string(currentRecord.timesheet_verified ? 1 : 0) +
@@ -148,13 +149,12 @@ bool StatementsPanel::delAccrualRecord() {
 }
 
 void StatementsPanel::refresh() {
-
     // Основная таблица расчетных ведомостей
     statements.clear();
     std::cout << "рефреш ..." << std::endl;
     // Загружаем данные из БД
     const char *sql = "SELECT s.id, s.month, e.id, i.full_name || '-' || p.job_title || '-' || d.division_name || "
-        "'-' || e.contract, printf('%.2f', p.salary), e.rate, p.norm, s.hours_worked,"
+        "'-' || e.contract, printf('%.2f', p.salary), e.rate, p.norm, s.hours_norm, s.hours_worked,"
         "s.timesheet_verified, s.note FROM Statements s LEFT JOIN Employees e ON s.employee_id=e.id "
         "LEFT JOIN Individuals i ON e.individual_id= i.id LEFT JOIN Positions p ON e.position_id = "
         "p.id LEFT JOIN Divisions d ON e.division_id = d.id";
@@ -171,8 +171,9 @@ void StatementsPanel::refresh() {
                 argv[5] ? std::stod(argv[5]) : 0,
                 argv[6] ? std::stod(argv[6]) : 0,
                 argv[7] ? std::stod(argv[7]) : 0,
-                argv[8] ? (std::stoi(argv[8]) > 0 ? true : false) : false,
-                argv[9] ? argv[9] : "",
+                argv[8] ? std::stod(argv[8]) : 0,
+                argv[9] ? (std::stoi(argv[9]) > 0 ? true : false) : false,
+                argv[10] ? argv[10] : "",
             });
             return 0;
         },
@@ -190,7 +191,7 @@ void StatementsPanel::refresh() {
     employees.clear();
     const char *sqlE = "SELECT e.id, i.full_name || '-' || p.job_title || '-' || "
             "d.division_name || '-' || e.contract || '-' || printf('%.2f', p.salary) || "
-            "'-' || e.rate || '-' || p.norm FROM Employees e  LEFT JOIN Individuals i ON "
+            "'-' || e.rate FROM Employees e  LEFT JOIN Individuals i ON "
             "e.individual_id= i.id LEFT JOIN Positions p ON e.position_id = p.id LEFT JOIN "
             "Divisions d ON e.division_id = d.id;";
     sqlite3_exec(
@@ -296,6 +297,8 @@ bool StatementsPanel::isCurrentChanged() {
         return true;
     if (currentRecord.employee_id != statements[oldIndex].employee_id)
         return true;
+    if (currentRecord.hours_worked != statements[oldIndex].hours_norm)
+        return true;
     if (currentRecord.hours_worked != statements[oldIndex].hours_worked)
         return true;
     if (currentRecord.timesheet_verified != statements[oldIndex].timesheet_verified)
@@ -364,7 +367,7 @@ void StatementsPanel::render() {
 
 
     // Разделение окна на 3 части (1 фиксированная + 2 изменяемых)
-    static float fixed_width = 700.0f;
+    static float fixed_width = 600.0f;
     static float fixed_heigh = 400.0f;
     static float splitter_size = 5.0f;
 
@@ -387,6 +390,9 @@ void StatementsPanel::render() {
             ImGui::PushStyleColor(ImGuiCol_Button,
                                   ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
             if (ImGui::Button(ICON_FA_REFRESH)) {
+
+                writeToDatabase();
+                writeAccrualToDatabase(); 
                 refresh();
             }
             if (ImGui::IsItemHovered()) {
@@ -481,13 +487,11 @@ void StatementsPanel::render() {
             if (ImGui::Button(ICON_FA_LIST)) {
                 
 
-            // Добавляем пнель запроса
-            auto newPanel = std::make_unique<ReviewPanel>(db,"SELECT e.id, i.full_name, p.job_title, e.rate, e.contract,"
-                                                          "e.contract_found, e.certificate_found, e.note FROM  Statements e "
-                                                          "LEFT JOIN Individuals i ON e.individual_id = i.id LEFT JOIN Positions p ON e.position_id = p.id");
-            // auto newPanel = std::make_unique<PositionsPanel>(db);
-            manager_panels.addPanel(std::move(newPanel));
-            manager_panels.getNextEnd()=true;
+                // Добавляем пнель запроса 
+                auto newPanel = std::make_unique<ReviewPanel>(db,"SELECT * FROM  Statements");
+                // auto newPanel = std::make_unique<PositionsPanel>(db);
+                manager_panels.addPanel(std::move(newPanel));
+                manager_panels.getNextEnd()=true;
             }
 
             if (ImGui::IsItemHovered()) {
@@ -518,8 +522,6 @@ void StatementsPanel::render() {
             }
 
             // месяц
-
-
             ImGui::Text("Месяц:");
             ImGui::SameLine();
             // ImGui::InputInt("##месяц_", &currentRecord.month);
@@ -560,24 +562,34 @@ void StatementsPanel::render() {
             }
 
 
-            ImGui::Text("Оклад по должности:");
+            ImGui::Text("Расчетные ( оклад: ");
             ImGui::SameLine();
-            ImGui::Text("ID %0.2f",currentRecord.salary);
-            // ImGui::SetCursorPosX(
+            // расчет полного оклада по выплате для стравнения 
+            double rSalary = 0.0f;
+            if (currentRecord.rate !=0 && currentRecord.hours_worked !=0)
+                rSalary = sSalary*currentRecord.hours_norm/(currentRecord.rate*currentRecord.hours_worked);
+
+            if (rSalary!=currentRecord.salary) 
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),"%0.2f",rSalary);
+            else ImGui::Text("%0.2f",rSalary);
+            ImGui::SameLine();
+            ImGui::Text(" / %0.2f",currentRecord.salary);
+        
+        // ImGui::SetCursorPosX(
             //     ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
             //     ImGui::CalcTextSize(std::to_string(currentRecord.rate).c_str()).x);
             // ImGui::SetNextItemWidth(
             //     ImGui::CalcTextSize(std::to_string(currentRecord.rate).c_str()).x);
             // ImGui::InputDouble("##ставки", &currentRecord.rate, 0, 0, "%0.2f");
 
-            ImGui::Text("Занято ставок:");
             ImGui::SameLine();
-            ImGui::Text("%0.3f",currentRecord.rate);
+            ImGui::Text(" ставок:%0.2f",currentRecord.rate);
+            // ImGui::SameLine();
+            // ImGui::Text(" норма:%0.2f )",currentRecord.norm);
+
+            ImGui::Text("Фактическая норма часов на полгую ставку:");
             ImGui::SameLine();
-            ImGui::Text("Норма часов:");
-            ImGui::SameLine();
-            ImGui::Text("%0.2f",currentRecord.norm);
-            
+            ImGui::InputDouble("##норма", &currentRecord.hours_norm, 0, 0, "%0.2f");
 
             ImGui::Text("Отработано часов:");
             ImGui::SameLine();
@@ -681,7 +693,7 @@ void StatementsPanel::render() {
             }
 
             // открыть панель начислений
-            ImGui::SameLine(0.0f,50.0f);
+            ImGui::SameLine(0.0f,40.0f);
             ImGui::PushStyleColor(ImGuiCol_Button,
                                   ImVec4(0.2f, 0.5f, 0.2f, 1.0f)); // Зеленый
             if (ImGui::Button(ICON_FA_MONEY)) {
@@ -707,6 +719,11 @@ void StatementsPanel::render() {
                 ImGui::SetTooltip("Приказы");
             }
             ImGui::PopStyleColor();
+
+            // сумма начислений
+
+            ImGui::SameLine();
+            ImGui::Text("Итого: %5.2f", summaAccirals);
 
             // таблица начислений ----------------------------------------------------------------------------------------------
             if (ImGui::BeginTable("list_accruals", 7,
@@ -734,6 +751,10 @@ void StatementsPanel::render() {
                                         30.0f);
                 ImGui::TableSetupColumn("Примечание");
                 ImGui::TableHeadersRow();
+            
+                summaAccirals =0.00f;
+                double oldsSalary=sSalary; //запоминаем старое значение для расчета процента
+                sSalary =0.00f;
 
                 for (size_t i = 0; i < list_accruals.size(); ++i) {
 
@@ -741,6 +762,12 @@ void StatementsPanel::render() {
                     if (list_accruals[i].statement_id!=currentRecord.id) {
                          continue;
                     }
+
+                    // расчет суммы начислений
+                    summaAccirals=summaAccirals+list_accruals[i].amount;
+                    // расчет суммарного фактического оклада (сумма всех начислений помеченых как оклад)
+                    if(list_accruals[i].this_salary)
+                        sSalary=sSalary+list_accruals[i].amount;
 
                     //таблица начислений -------------------------------------------------------- ЩЩЩЩЩЩЩЩo
                     ImGui::TableNextRow();
@@ -789,23 +816,32 @@ void StatementsPanel::render() {
                     // сумма
                     ImGui::TableSetColumnIndex(2);
                     // прижимае к правой тороне
-                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                    ImGui::SetCursorPosX(
-                        ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-                        ImGui::CalcTextSize(std::to_string(list_accruals[i].amount).c_str())
-                            .x);
-
                     if(selectedAccrualIndex==i) {
-                        ImGui::InputDouble("##сумма", &currentAccrualRecord.amount, 0, 0, "%0.2f");
-                    } else    
-                        ImGui::Text("%0.2f", list_accruals[i].amount);
-                    
-                    ImGui::PopStyleVar();
-                    
+                        ImGui::SetNextItemWidth(ImGui::GetColumnWidth());
+                        ImGui::InputDouble("##сумма", &currentAccrualRecord.amount, 0, 0, "%.2f");
+                    } else {
 
-                    // Процент пока просто процент - позже добавлю расчет ----------------------------
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+                        char buf_amount[32];
+                        snprintf(buf_amount, sizeof(buf_amount), "%.2f", list_accruals[i].amount);
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_amount).x);
+
+                        ImGui::Text("%.2f", list_accruals[i].amount);
+
+                        ImGui::PopStyleVar();
+                    }
+
+                    // Процент ----------------------------
+                    //расчет процента от оклада
+                    double rPercent = 0.0f;
+                    if (oldsSalary !=0)
+                        rPercent = list_accruals[i].amount/oldsSalary*100;
+                    // если процент не равен справочному, то красным
                     ImGui::TableSetColumnIndex(3);
-                    ImGui::Text("%0.0f", list_accruals[i].percentage);
+                    if (rPercent!=list_accruals[i].percentage) 
+                        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),"%2.0f",rPercent);
+                    else ImGui::Text("%2.0f",rPercent);
+
                     
                     // Приказ
                     ImGui::TableSetColumnIndex(4);
@@ -895,7 +931,7 @@ void StatementsPanel::render() {
         // ImGui::Text("Изменяемая часть 3");
         
 
-        if (ImGui::BeginTable("Statements", 8,
+        if (ImGui::BeginTable("Statements", 9,
                               ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                                   ImGuiTableFlags_RowBg |
                                   ImGuiTableFlags_ScrollY)) {
@@ -907,13 +943,17 @@ void StatementsPanel::render() {
             ImGui::TableSetupColumn("Месяц",
                                     ImGuiTableColumnFlags_WidthFixed |
                                         ImGuiTableColumnFlags_NoResize,
-                                    200.0f);
+                                    100.0f);
             ImGui::TableSetupColumn("Сотрудник");
             ImGui::TableSetupColumn("Оклад",
                                     ImGuiTableColumnFlags_WidthFixed |
                                         ImGuiTableColumnFlags_NoResize,
-                                    200.0f);
+                                    150.0f);
             ImGui::TableSetupColumn("Ставка",
+                                    ImGuiTableColumnFlags_WidthFixed |
+                                        ImGuiTableColumnFlags_NoResize,
+                                    100.0f);
+            ImGui::TableSetupColumn("Норма",
                                     ImGuiTableColumnFlags_WidthFixed |
                                         ImGuiTableColumnFlags_NoResize,
                                     100.0f);
@@ -961,49 +1001,52 @@ void StatementsPanel::render() {
                 // месяц
                 ImGui::TableSetColumnIndex(1);
                 ImGui::Text("%s", statements[i].month > 0 ? months[statements[i].month-1] : "");
-                // ImGui::Text("%d", statements[i].month);
                 // сотрудник
                 ImGui::TableSetColumnIndex(2);
                 ImGui::Text("%s", statements[i].employee.c_str());
                 // оклад
                 ImGui::TableSetColumnIndex(3);
                 // прижимае к правой тороне
+                // ImGui::Text("%30.2f", statements[i].salary);
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                ImGui::SetCursorPosX(
-                    ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-                    ImGui::CalcTextSize(std::to_string(statements[i].salary).c_str())
-                        .x -
-                    ImGui::GetStyle().ItemSpacing.x);
+                char buf_salary[32];
+                snprintf(buf_salary, sizeof(buf_salary), "%0.2f", statements[i].salary);
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_salary).x);
                 ImGui::Text("%0.2f", statements[i].salary);
                 ImGui::PopStyleVar();
                 // ставка
                 ImGui::TableSetColumnIndex(4);
                 // прижимае к правой тороне
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                ImGui::SetCursorPosX(
-                    ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-                    ImGui::CalcTextSize(std::to_string(statements[i].rate).c_str())
-                        .x -
-                    ImGui::GetStyle().ItemSpacing.x);
+                char buf_rate[32];
+                snprintf(buf_rate, sizeof(buf_rate), "%.2f", statements[i].rate);
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_rate).x);
                 ImGui::Text("%0.2f", statements[i].rate);
                 ImGui::PopStyleVar();
-                // часы
+                // норма факт
                 ImGui::TableSetColumnIndex(5);
+                // прижимае к правой стороне
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+                char buf_nhours[32];
+                snprintf(buf_nhours, sizeof(buf_nhours), "%.2f", statements[i].hours_norm);
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_nhours).x);
+                ImGui::Text("%0.2f", statements[i].hours_norm);
+                ImGui::PopStyleVar();
+                // часы
+                ImGui::TableSetColumnIndex(6);
                 // прижимае к правой тороне
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                ImGui::SetCursorPosX(
-                    ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-                    ImGui::CalcTextSize(std::to_string(statements[i].hours_worked).c_str())
-                        .x -
-                    ImGui::GetStyle().ItemSpacing.x);
+                char buf_hours[32];
+                snprintf(buf_hours, sizeof(buf_hours), "%.2f", statements[i].hours_worked);
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_hours).x);
                 ImGui::Text("%0.2f", statements[i].hours_worked);
                 ImGui::PopStyleVar();
 
                 // табель сверен
-                ImGui::TableSetColumnIndex(6);
+                ImGui::TableSetColumnIndex(7);
                 ImGui::Text("%s", statements[i].timesheet_verified ? "+" : " ");
                 // примечание
-                ImGui::TableSetColumnIndex(7);
+                ImGui::TableSetColumnIndex(8);
                 // обрабатываем многострочку - просто срезаем после возврата строки
                 ImGui::Text("%s", statements[i]
                                       .note.substr(0, statements[i].note.find("\n"))

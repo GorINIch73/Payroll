@@ -61,6 +61,13 @@ bool Database::CreateNewDatabase() {
 
     const char *sql = R"(
 
+    CREATE TABLE IF NOT EXISTS Settings (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        organization TEXT,
+        note         TEXT
+    );
+    INSERT INTO Settings (organization) VALUES ( '');
+    
     CREATE TABLE IF NOT EXISTS Individuals (
         id        INTEGER PRIMARY KEY AUTOINCREMENT
                           NOT NULL,
@@ -125,6 +132,7 @@ bool Database::CreateNewDatabase() {
                                    NOT NULL,
         month              INTEGER DEFAULT (0),
         employee_id        INTEGER REFERENCES Employees (id),
+        hours_norm         REAL    DEFAULT (0),
         hours_worked       REAL    DEFAULT (0),
         timesheet_verified INTEGER DEFAULT (0),
         note           TEXT

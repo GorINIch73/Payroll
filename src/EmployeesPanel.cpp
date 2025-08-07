@@ -508,7 +508,7 @@ void EmployeesPanel::render() {
         ImGui::TableSetupColumn("Оклад",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                200.0f);
+                                150.0f);
         ImGui::TableSetupColumn("Ставка",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
@@ -567,22 +567,28 @@ void EmployeesPanel::render() {
             ImGui::TableSetColumnIndex(3);
             // прижимае к правой тороне
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-            ImGui::SetCursorPosX(
-                ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-                ImGui::CalcTextSize(std::to_string(employees[i].salary).c_str())
-                    .x -
-                ImGui::GetStyle().ItemSpacing.x);
+            // ImGui::SetCursorPosX(
+            //     ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+            //     ImGui::CalcTextSize(std::to_string(employees[i].salary).c_str())
+            //         .x -
+            //     ImGui::GetStyle().ItemSpacing.x);
+            char buf_salary[32];
+            snprintf(buf_salary, sizeof(buf_salary), "%.2f", employees[i].salary);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_salary).x);
             ImGui::Text("%0.2f", employees[i].salary);
             ImGui::PopStyleVar();
             // ставка
             ImGui::TableSetColumnIndex(4);
             // прижимае к правой тороне
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-            ImGui::SetCursorPosX(
-                ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-                ImGui::CalcTextSize(std::to_string(employees[i].rate).c_str())
-                    .x -
-                ImGui::GetStyle().ItemSpacing.x);
+            // ImGui::SetCursorPosX(
+            //     ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+            //     ImGui::CalcTextSize(std::to_string(employees[i].rate).c_str())
+            //         .x -
+            //     ImGui::GetStyle().ItemSpacing.x);
+            char buf_rate[32];
+            snprintf(buf_rate, sizeof(buf_rate), "%.2f", employees[i].rate);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_rate).x);
             ImGui::Text("%0.2f", employees[i].rate);
             ImGui::PopStyleVar();
             // Отделение

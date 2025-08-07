@@ -10,6 +10,7 @@
 #include "DivisionsPanel.h"
 #include "AccrualsPanel.h"
 #include "StatementsPanel.h"
+#include "SettingsPanel.h"
 #include "Manager.h"
 
 #include "ImGuiFileDialog.h"
@@ -60,22 +61,10 @@ GUI::GUI(GLFWwindow *w)
     io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
                                  icons_ranges);
 
-    // Инициализация базы данных
-      // Database db;
-    // if (!db.open("payroll.db")) {
-    //     std::cerr << "Не удалось открыть БД!" << std::endl;
-    //     // return -1;
-    // }
-
-    // ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".png",
-    //                                           ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
-    //                                           ICON_FA_FILE_IMAGE);
+    // настройка внешнего вида панели файлового диалога - иконки для файлов и каталогов
     ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".db",
                                               ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
                                               ICON_FA_DATA_BASE);
-    // ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".txt",
-    //                                           ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
-    //                                           ICON_FA_FILE_LINES);
     ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "",
                                               ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
                                               ICON_FA_FOLDER); // Папки
@@ -93,19 +82,7 @@ void GUI::render() {
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
-    // ImGui::SetNextWindowViewport(viewport->ID);
 
-    // ImVec2 parent_size = ImGui::GetWindowSize();
-    // ImGui::SetNextWindowPos(ImVec2(0, 0));
-    // ImGui::SetNextWindowSize(parent_size);
-    // // ImGui::Begin("Fullscreen Child", nullptr,
-    // ImGuiWindowFlags_NoCollapse);
-    // ImGui::Begin("Payroll", nullptr,
-    //              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-    //                  ImGuiWindowFlags_NoMove |
-    //                  ImGuiWindowFlags_NoBringToFrontOnFocus |
-    //                  ImGuiWindowFlags_MenuBar);
-    //
 
     ImGui::Begin("Main Window", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
@@ -113,8 +90,6 @@ void GUI::render() {
 
     showMainMenu();
 
-    if (showSettings)
-        ShowSettings();
     if (showAbout)
         ShowAbout();
     if (showFileDialog)
@@ -124,38 +99,18 @@ void GUI::render() {
 
     // Основное окно с табами
     //
-    // ImGui::SetNextWindowSize(ImGui::GetContentRegionAvail());
-    // ImGui::Begin("Основное окно", nullptr,
-    //             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-    //                 ImGuiWindowFlags_NoCollapse);
     //
     if (ImGui::BeginTabBar("MainTabBar")) {
         // Вкладки
         
-        // int numTab = 0;
-
-        // std::cout << " manager " << (*panel)->getName();
-        
-        // for (auto panel = manager_panels.begin(); panel != manager_panels.end();) {
 
         for (size_t i = 0; i < manager_panels.getSize();) {
             Panel* panel = manager_panels.getPanel(i);
             if (!panel) {  // Проверка на nullptr (на всякий случай)
                 std::cerr << "Null pointer at Panel" << __LINE__ << std::endl;
                 break;
-                // panel->update();  // Вызов метода панели
             }
             
-        
-            // if (!(*panel)) {
-            //     std::cerr << "Null pointer at Panel" << __LINE__ << std::endl;
-            //     break;
-            // }
-
-            // std::cout << numTab ;
-            // std::cout << " Panel " << panel->getName();
-            
-
 
             std::string name;
             name = name + std::to_string(i) + " " + panel->getName();
@@ -187,60 +142,18 @@ void GUI::render() {
                 ++i;
             }
 
-
-
-        // старый код по итераторам не работает нормально при добавлении панели извне
-            // std::string name;
-            // name = name + std::to_string(numTab) + " " + (*panel)->getName();
-            // // std::string name = "таб " + std::to_string(numTab);
-            //
-            // // Устанавливаем флаг выбора для последней вкладки
-            // ImGuiTabItemFlags flags =  0;
-            // if (goEndPanel && (panel == std::prev(manager_panels.end()))) {
-            //     goEndPanel = false;
-            //     flags = ImGuiTabItemFlags_SetSelected;
-            //     // std::cout << "go last panels " << (*panel)->getName() << std::endl;
-            // }
-            //
-            // if (ImGui::BeginTabItem(name.c_str(), &(*panel)->getIsOpen(),
-            //                         ImGuiTabItemFlags_UnsavedDocument | flags )) {
-            //
-            //     std::cout << " - render start ... " ;
-            //     (*panel)->render();
-            //     std::cout << " -- done" << std::endl;
-            //     ImGui::EndTabItem();
-            // }
-            // if (!(*panel)->getIsOpen()) {
-            //     printf("%s close\n",(*panel)->getName());
-            //     panel = manager_panels.erase(panel);
-            //     // Действие при закрытии Tab
-            //
-            // } else {
-            //     ++panel;
-            // }
-            //
-            // numTab++;
-
         }
         ImGui::EndTabBar();
     }
 
     ImGui::End();
-    // Рендерим все активные панели
 }
 
 
 void GUI::addEmployeesPanel() {
 // сотрудники
-
-
     auto newPanel = std::make_unique<EmployeesPanel>(db);
     manager_panels.addPanel(std::move(newPanel));
-
-    // auto newPanel = std::make_shared<EmployeesPanel>(db);
-    // manager_panels.push_back(newPanel);
-    // auto newPanel = std::make_unique<EmployeesPanel>(db);
-    // manager_panels.push_back(std::move(newPanel));
     manager_panels.getNextEnd()=true;
 }
 
@@ -248,10 +161,6 @@ void GUI::addPositionsPanel() {
     // Добавляем пнель должностей
     auto newPanel = std::make_unique<PositionsPanel>(db);
     manager_panels.addPanel(std::move(newPanel));
-    // newPanel->getIsOpen() = true;
-    //
-
-    // manager_panels.push_back(std::move(newPanel));
     manager_panels.getNextEnd() = true;
 }
 
@@ -287,11 +196,14 @@ void GUI::addIndividualsPanel() {
     // Добавляем пнель физлиц
     auto newPanel = std::make_unique<IndividualsPanel>(db);
     manager_panels.addPanel(std::move(newPanel));
-    // newPanel->getIsOpen() = true;
-
-    // manager_panels.push_back(std::move(newPanel));
     manager_panels.getNextEnd()=true;
-    // goEndPanel = true; 
+}
+
+void GUI::addSettingsPanel() {
+    // Добавляем пнель настроек
+    auto newPanel = std::make_unique<SettingsPanel>(db);
+    manager_panels.addPanel(std::move(newPanel));
+    manager_panels.getNextEnd()=true;
 }
 
 void GUI::showMainMenu() {
@@ -301,9 +213,16 @@ void GUI::showMainMenu() {
             
             if (ImGui::MenuItem("Открыть базу")) {
                 showFileDialog = true;
-                // Логика открытия файла (используем ImGuiFileDialog)
+                // используем ImGuiFileDialog
+            }
+            if (ImGui::MenuItem("Сохранить как")) {
+                // showFileDialog = true;
+                // закрыть все окна
+                // запросить новое имя
+                // продублировать базу, открыть
             }
             if (ImGui::MenuItem("Закрыть базу")) {
+                // перед закрытием комитнуть изменения, закрыть все окна
                 db.Close();
             }
 
@@ -318,6 +237,7 @@ void GUI::showMainMenu() {
             
             if (ImGui::MenuItem("Создать БД")) {
                 /* Создать новую БД */
+                // не сделано - запросить новое имя
 
                 if (!db.CreateNewDatabase()) {
                     std::cerr << "Ошибка создания БД!" << std::endl;
@@ -358,7 +278,8 @@ void GUI::showMainMenu() {
 
         if (ImGui::MenuItem("Отчет")) { /* ... */
         }
-        if (ImGui::MenuItem("Настройки")) { /* ... */
+        if (ImGui::MenuItem("Настройки")) { 
+            addSettingsPanel();
         }
         if (ImGui::MenuItem("О программе")) { /*showAbout(); */
         }
@@ -366,7 +287,7 @@ void GUI::showMainMenu() {
     }
 }
 
-  
+// сделать диалоги для -открыть, -сохранить как, -создать новую.  
 void GUI::ShowFileDialog() {
     if (!showFileDialog)
         return;
@@ -414,6 +335,7 @@ void GUI::ShowFileDialog() {
     }
 }
 
+// переделано - поправить
 void GUI::ShowSettings() {
     if (!showSettings)
         return;

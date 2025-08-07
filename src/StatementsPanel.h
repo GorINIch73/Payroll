@@ -16,6 +16,7 @@ struct Statement {
         double salary = 0.0f; // оклад по договору только для расчетов
         double rate = 0.0f; // ставка только для расчетов
         double norm = 0.0f; // норма чсот из справочника должностей только для расчетов
+        double hours_norm = 0.0f;
         double hours_worked = 0.0f;
         bool timesheet_verified = false;
         std::string note = "";
@@ -68,4 +69,8 @@ class StatementsPanel : public Panel {
         List_accrual currentAccrualRecord;
         int selectedAccrualIndex = -1; // текущая строка начислений
         int oldAccrualIndex = -1; // для отслеживание изменения выделенной строки начислений
+
+
+        double summaAccirals = 0.0f; // Сумма всех начислений
+        double sSalary = 0.0f; // суммарный оклад
 };

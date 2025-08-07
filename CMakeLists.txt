@@ -103,6 +103,7 @@ add_executable(Payroll
     src/StatementsPanel.cpp
     src/ReviewPanel.cpp
     src/Manager.cpp
+    src/SettingsPanel.cpp
 
     src/Settings.cpp  
     src/PdfExporter.cpp  
