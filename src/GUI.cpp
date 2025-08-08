@@ -73,6 +73,7 @@ GUI::GUI(GLFWwindow *w)
     settings.Load("config.json");
     //	std::cout << "old file: " << settings.lastDbPath;
     recentFiles.push_back(settings.lastDbPath);
+    g_MessageLog.Add("Добро пожаловать.");
 
 }
 
@@ -92,61 +93,72 @@ void GUI::render() {
 
     if (showAbout)
         ShowAbout();
-    if (showFileDialog)
-        ShowFileDialog();
+    if (showFileDialogOpen)
+        ShowFileDialogOpen();
+    if (showFileDialogNew)
+        ShowFileDialogNew();
+    if (showFileDialogSaveAs)
+        ShowFileDialogSaveAs();
 
 
 
     // Основное окно с табами
     //
     //
-    if (ImGui::BeginTabBar("MainTabBar")) {
-        // Вкладки
-        
-
-        for (size_t i = 0; i < manager_panels.getSize();) {
-            Panel* panel = manager_panels.getPanel(i);
-            if (!panel) {  // Проверка на nullptr (на всякий случай)
-                std::cerr << "Null pointer at Panel" << __LINE__ << std::endl;
-                break;
-            }
+    
+    ImGui::BeginChild("Main", ImVec2(0,ImGui::GetContentRegionAvail().y-g_MessageLog.height), true);
+    {
+        if (ImGui::BeginTabBar("MainTabBar")) {
+            // Вкладки
             
 
-            std::string name;
-            name = name + std::to_string(i) + " " + panel->getName();
-            // std::string name = "таб " + std::to_string(numTab);
-            
-            // Устанавливаем флаг выбора для последней вкладки
-            ImGuiTabItemFlags flags =  0;
-            if ((i == manager_panels.getSize()-1) && manager_panels.getNextEnd()) {
-                manager_panels.getNextEnd() = false; 
-                // goEndPanel = false; 
-                flags = ImGuiTabItemFlags_SetSelected;
-                // std::cout << "go last panels " << panel->getName() << std::endl;
+            for (size_t i = 0; i < manager_panels.getSize();) {
+                Panel* panel = manager_panels.getPanel(i);
+                if (!panel) {  // Проверка на nullptr (на всякий случай)
+                    std::cerr << "Null pointer at Panel" << __LINE__ << std::endl;
+                    break;
+                }
+                
+
+                std::string name;
+                name = name + std::to_string(i) + " " + panel->getName();
+                // std::string name = "таб " + std::to_string(numTab);
+                
+                // Устанавливаем флаг выбора для последней вкладки
+                ImGuiTabItemFlags flags =  0;
+                if ((i == manager_panels.getSize()-1) && manager_panels.getNextEnd()) {
+                    manager_panels.getNextEnd() = false; 
+                    // goEndPanel = false; 
+                    flags = ImGuiTabItemFlags_SetSelected;
+                    // std::cout << "go last panels " << panel->getName() << std::endl;
+                }
+
+                if (ImGui::BeginTabItem(name.c_str(), &panel->getIsOpen(),
+                                        ImGuiTabItemFlags_UnsavedDocument | flags )) {
+
+                    // std::cout << " - render start ... " ;
+                    panel->render();
+                    // std::cout << " -- done" << std::endl;
+                    ImGui::EndTabItem();
+                }
+                if (!panel->getIsOpen()) {
+                    printf("%s close\n",panel->getName());
+                    manager_panels.removePanel(i);
+                    // Действие при закрытии Tab
+
+                } else {
+                    ++i;
+                }
+
             }
-
-            if (ImGui::BeginTabItem(name.c_str(), &panel->getIsOpen(),
-                                    ImGuiTabItemFlags_UnsavedDocument | flags )) {
-
-                // std::cout << " - render start ... " ;
-                panel->render();
-                // std::cout << " -- done" << std::endl;
-                ImGui::EndTabItem();
-            }
-            if (!panel->getIsOpen()) {
-                printf("%s close\n",panel->getName());
-                manager_panels.removePanel(i);
-                // Действие при закрытии Tab
-
-            } else {
-                ++i;
-            }
-
+            ImGui::EndTabBar();
         }
-        ImGui::EndTabBar();
-    }
 
+        ImGui::EndChild();
+    g_MessageLog.Draw(); // статусбар
+    }
     ImGui::End();
+    // g_MessageLog.Draw(); // статусбар
 }
 
 
@@ -212,38 +224,42 @@ void GUI::showMainMenu() {
         if (ImGui::BeginMenu("Файл")) {
             
             if (ImGui::MenuItem("Открыть базу")) {
-                showFileDialog = true;
+                showFileDialogOpen = true;
                 // используем ImGuiFileDialog
             }
             if (ImGui::MenuItem("Сохранить как")) {
-                // showFileDialog = true;
-                // закрыть все окна
-                // запросить новое имя
-                // продублировать базу, открыть
+                if(db.IsOpen())
+                    // закрыть все окна ХЗ
+                    showFileDialogSaveAs = true;
+                else
+                   g_MessageLog.Add("Нечего сохранять. База не открыта!", ImVec4(0.6, 0.3, 0.3, 1));
             }
             if (ImGui::MenuItem("Закрыть базу")) {
                 // перед закрытием комитнуть изменения, закрыть все окна
                 db.Close();
             }
 
+            if (ImGui::MenuItem("Создать новую базу")) {
+                /* Создать новую БД */
+                // не сделано - запросить новое имя
+                showFileDialogNew = true;
+
+                // if (!db.CreateNewDatabase()) {
+                //     std::cerr << "Ошибка создания БД!" << std::endl;
+                //     return;
+                // }
+            }
+            
             if (ImGui::BeginMenu("Последние файлы")) {
                 for (const auto &file : recentFiles) {
-                    if (ImGui::MenuItem(file.empty() ? "путо" :  file.c_str())) {
+                    if (ImGui::MenuItem(file.empty() ? "пусто" :  file.c_str())) {
                         db.Open(file);
+                        g_MessageLog.Add("База: "+db.getPath()+" открыта.", ImVec4(0.3, 0.6, 0.3, 1));
                     }
                 }
                 ImGui::EndMenu();
             }
             
-            if (ImGui::MenuItem("Создать БД")) {
-                /* Создать новую БД */
-                // не сделано - запросить новое имя
-
-                if (!db.CreateNewDatabase()) {
-                    std::cerr << "Ошибка создания БД!" << std::endl;
-                    return;
-                }
-            }
             if (ImGui::MenuItem("Выход")) {
                 /* Закрыть приложение */
                 glfwSetWindowShouldClose(window, true);
@@ -288,22 +304,30 @@ void GUI::showMainMenu() {
 }
 
 // сделать диалоги для -открыть, -сохранить как, -создать новую.  
-void GUI::ShowFileDialog() {
-    if (!showFileDialog)
+void GUI::ShowFileDialogOpen() {
+    if (!showFileDialogOpen)
         return;
 
     IGFD::FileDialogConfig config;
     config.path = ".";
+    config.filePathName = ""; // Начальное имя файла
+    config.flags = ImGuiFileDialogFlags_Modal;  // Делаем диалог модальным
+
     ImGuiFileDialog::Instance()->OpenDialog(
-        "ChooseFileDlg", // Уникальный ID
-        "Выберите файл", // Заголовок
+        "ChooseFileDlgOpen", // Уникальный ID
+        "Выберите файл базы", // Заголовок
         //            ".*,.db,.pdf",     // Фильтры (через запятую)
         ".db", // Фильтр (через запятую)
         config // Стартовая папка
     );
 
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
     // Обработка выбора файла
-    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlg")) {
+    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgOpen",
+                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove,
+                viewport->Size,          // Размер - весь вьюпорт
+                viewport->Size           // Минимальный размер
+                )) {
         if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
             std::string filePathName =
                 ImGuiFileDialog::Instance()->GetFilePathName();
@@ -320,8 +344,10 @@ void GUI::ShowFileDialog() {
             if (!db.Open(filePathName)) {
                 std::cerr << "Не удалось открыть БД!" << std::endl;
                 // return -1;
+                g_MessageLog.Add("Не удалось открыть базу: "+filePathName, ImVec4(0.6, 0.3, 0.3, 1));
             }
             else {
+                g_MessageLog.Add("База: "+filePathName+" открыта.", ImVec4(0.3, 0.6, 0.3, 1));
                 // Добавляем в список последних файлов и сохраняем
                 recentFiles.push_back(filePathName);
                 settings.lastDbPath = filePathName;
@@ -331,7 +357,131 @@ void GUI::ShowFileDialog() {
 
         // Закрываем диалог
         ImGuiFileDialog::Instance()->Close();
-        showFileDialog = false;
+        showFileDialogOpen = false;
+    }
+}
+
+void GUI::ShowFileDialogNew() {
+    if (!showFileDialogNew)
+        return;
+
+    IGFD::FileDialogConfig config;
+    config.path = ".";
+    config.filePathName = "new_base.db"; // Имя по умолчанию
+    config.flags = ImGuiFileDialogFlags_Modal |
+                  ImGuiFileDialogFlags_ConfirmOverwrite;
+    ImGuiFileDialog::Instance()->OpenDialog(
+        "ChooseFileDlgOpen", // Уникальный ID
+        "Веведите имя новой базы", // Заголовок
+        //            ".*,.db,.pdf",     // Фильтры (через запятую)
+        ".db", // Фильтр (через запятую)
+        config // Стартовая папка
+    );
+
+    // Обработка выбора файла
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgOpen",
+                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove,
+                viewport->Size,          // Размер - весь вьюпорт
+                viewport->Size           // Минимальный размер
+                )) {
+        if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+            std::string filePathName =
+                ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath =
+                ImGuiFileDialog::Instance()->GetCurrentPath();
+
+            // std::cout << "Выбран файл имя: " << filePathName << std::endl;
+            // std::cout << "Выбран файл: " << filePath << std::endl;
+
+            // загрузка базы данных
+            // надо сделать принудительное закрытие всех окон - хз
+
+            // db.Open(filePathName);
+            if (!db.Open(filePathName)) {
+                std::cerr << "Не удалось открыть БД!" << std::endl;
+                g_MessageLog.Add("Не удалось открыть базу: "+filePathName, ImVec4(0.6, 0.3, 0.3, 1));
+                // return -1;
+            }
+            else {
+                db.CreateNewDatabase();
+                g_MessageLog.Add("База " + filePathName + "создана.", ImVec4(0.5, 0.3, 0.6, 1));
+                // Добавляем в список последних файлов и сохраняем
+                recentFiles.push_back(filePathName);
+                settings.lastDbPath = filePathName;
+                settings.Save("config.json");
+            }
+        }
+
+        // Закрываем диалог
+        ImGuiFileDialog::Instance()->Close();
+        showFileDialogNew = false;
+    }
+}
+
+void GUI::ShowFileDialogSaveAs() {
+    if (!showFileDialogSaveAs)
+        return;
+
+    IGFD::FileDialogConfig config;
+    config.path = ".";
+    config.filePathName = db.getPath(); // Начальное имя файла
+    config.flags = ImGuiFileDialogFlags_Modal | 
+                       ImGuiFileDialogFlags_ConfirmOverwrite;
+
+    ImGuiFileDialog::Instance()->OpenDialog(
+        "ChooseFileDlgOpen", // Уникальный ID
+        "Задайте новое имя базы", // Заголовок
+        //            ".*,.db,.pdf",     // Фильтры (через запятую)
+        ".db", // Фильтр (через запятую)
+        config // Стартовая папка
+    );
+
+    // Обработка выбора файла
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgOpen",
+                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove,
+                viewport->Size,          // Размер - весь вьюпорт
+                viewport->Size           // Минимальный размер
+                )) {
+        if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+            std::string filePathName =
+                ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath =
+                ImGuiFileDialog::Instance()->GetCurrentPath();
+
+            // std::cout << "Выбран файл имя: " << filePathName << std::endl;
+            // std::cout << "Выбран файл: " << filePath << std::endl;
+            
+            // загрузка базы данных
+            // надо сделать принудительное закрытие всех окон - хз
+
+            if(filePathName!=db.getPath()) {
+
+                if(db.CopyDatabase(filePathName)!=SQLITE_OK && filePathName!=db.getPath()) {
+
+                    g_MessageLog.Add("Ошибка: база "+filePathName+" не скопирована!", ImVec4(1, 0.3, 0.3, 1));
+                }
+                else {
+                    db.Close();
+                    if (!db.Open(filePathName)) {
+                        std::cerr << "Не удалось открыть новую БД!" << std::endl;
+                        // return -1;
+                    }
+                    else {
+                        g_MessageLog.Add("Скопированная база: "+filePathName+" открыта.", ImVec4(0.3, 0.6, 0.3, 1));
+                        // Добавляем в список последних файлов и сохраняем
+                        recentFiles.push_back(filePathName);
+                        settings.lastDbPath = filePathName;
+                        settings.Save("config.json");
+                    }
+                }
+            }
+        }
+
+        // Закрываем диалог
+        ImGuiFileDialog::Instance()->Close();
+        showFileDialogSaveAs = false;
     }
 }
 

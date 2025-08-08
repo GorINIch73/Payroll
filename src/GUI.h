@@ -29,7 +29,9 @@ class GUI {
         std::vector<std::string> recentFiles;
         bool showSettings = false;
         bool showAbout = false;
-        bool showFileDialog = false;
+        bool showFileDialogOpen = false;
+        bool showFileDialogNew = false;
+        bool showFileDialogSaveAs = false;
         // bool goEndPanel  = false;
 
 
@@ -45,6 +47,8 @@ class GUI {
         void showMainMenu();
         void ShowSettings();
         void ShowAbout();
-        void ShowFileDialog();
+        void ShowFileDialogOpen();
+        void ShowFileDialogNew();
+        void ShowFileDialogSaveAs();
         void GeneratePdfReport();
 };

@@ -105,7 +105,7 @@ bool StatementsPanel::addRecord() {
     // добавление новой записи в базу
     std::string sql;
     sql = "INSERT INTO Statements (month) VALUES (" + 
-        (currentRecord.month > 0
+    (currentRecord.month > 0
                  ? std::to_string(currentRecord.month)
                  : "0") +
 

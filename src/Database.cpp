@@ -156,6 +156,50 @@ bool Database::CreateNewDatabase() {
     return Execute(sql);
 }
 
+
+int Database::CopyDatabase(const std::string &dest_path) {
+    sqlite3* dest_db;
+    
+    // Проверка открыта ли база
+    if (!db) {
+        fprintf(stderr, "база не открыта: %s\n", dbPath);
+        return -1;
+    }
+
+    // Открываем/создаем целевую базу
+    if (sqlite3_open(dest_path.c_str(), &dest_db) != SQLITE_OK) {
+        fprintf(stderr, "Не удалось создать целевую базу: %s\n", sqlite3_errmsg(dest_db));
+ //        sqlite3_close(db);
+        return -1;
+    }
+
+    // Инициализируем механизм копирования
+    sqlite3_backup* backup = sqlite3_backup_init(dest_db, "main", db, "main");
+    if (!backup) {
+        fprintf(stderr, "Ошибка инициализации копирования: %s\n", sqlite3_errmsg(dest_db));
+   //     sqlite3_close(db);
+        sqlite3_close(dest_db);
+        return -1;
+    }
+
+    // Выполняем копирование
+    sqlite3_backup_step(backup, -1); // -1 = копируем всю базу
+    sqlite3_backup_finish(backup);
+
+    // Проверяем результат
+    int rc = sqlite3_errcode(dest_db);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Ошибка копирования: %s\n", sqlite3_errmsg(dest_db));
+    }
+
+    // Закрываем соединения
+  //    sqlite3_close(src_db);
+    sqlite3_close(dest_db);
+
+    return rc;
+}
+
+
 bool Database::tableExists(const std::string &tableName) {
     std::string sql =
         "SELECT name FROM sqlite_master WHERE type='table' AND name='" +

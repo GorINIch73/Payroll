@@ -8,6 +8,72 @@
 #include <cstdio>
 #include <unicode/utf8.h>
 
+// лог сообытий
+void MessageLog::Add(const std::string& msg, ImVec4 color) {
+    messages.emplace_back(msg, color);
+    auto_scroll=true;
+    if (messages.size() > 100) messages.erase(messages.begin());
+}
+void MessageLog::Draw() {
+    
+    // Стиль без заголовка и с плоскими границами
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    
+    
+        // Отображаем сообщения
+    ImGui::BeginChild("##sbar", ImVec2(0, height), false, 
+            ImGuiWindowFlags_HorizontalScrollbar);
+    {    
+        for (const auto& [msg, color] : messages) {
+            ImGui::TextColored(color, "%s", msg.c_str());
+        }
+        
+        // Автоматическая прокрутка вниз
+        if (auto_scroll){
+
+            ImGui::SetScrollHereY(1.0f);
+            auto_scroll=false;
+        }
+        
+        ImGui::EndChild();
+        
+    }
+    ImGui::PopStyleVar(2);
+
+}
+
+
+
+//модальное сообщение об ошибке
+void ShowErrorModal(const std::string title, std::string message, bool* p_open)
+{
+    if (!ImGui::IsPopupOpen(title.c_str()))
+        ImGui::OpenPopup(title.c_str());
+
+    ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::BeginPopupModal(title.c_str(), p_open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        // Иконка через текст (можно заменить на свою текстуру)
+        ImGui::TextColored(ImVec4(1,0.2,0.2,1), "⚠");
+        ImGui::SameLine();
+        
+        // Сообщение с переносами
+        ImGui::TextWrapped("%s", message.c_str());
+        
+        // Центрированная кнопка
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - 120) * 0.5f);
+        if (ImGui::Button("Закрыть", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+            if (p_open) *p_open = false;
+        }
+        
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleColor();
+}
+
 // реализация кастомного чекбокса
 bool ToggleButton(const char *label, bool &v) {
 

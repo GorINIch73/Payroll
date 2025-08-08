@@ -5,6 +5,25 @@
 #include <string>
 #include <vector>
 
+// отображение лога событий
+struct MessageLog {
+    std::vector<std::pair<std::string, ImVec4>> messages;
+    bool auto_scroll = true;
+    float height = 22.0f; // Высота панели сообщений
+    // float width = 200.f; // ширина поля
+    
+    void Add(const std::string& msg, ImVec4 color = ImVec4(1, 1, 1, 1));
+    void Draw();
+};
+
+// Глобальный экземпляр лога
+inline MessageLog g_MessageLog;
+
+
+//модальное сообщение об ошибке
+void ShowErrorModal(const std::string title, std::string message, bool* p_open = NULL);
+
+// вспомогательная структура для комбобокса
 struct ComboItem {
         int id;
         std::string name;

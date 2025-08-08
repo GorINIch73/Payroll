@@ -14,8 +14,10 @@ class Database {
         bool Execute(const std::string &sql);
         bool CreateNewDatabase();
         bool tableExists(const std::string &tableName);
+        int CopyDatabase(const std::string &dest_path);
 
         bool IsOpen() const { return db != nullptr; }  
+        std::string getPath() const { return dbPath; }  
 
         sqlite3 *getHandle() const { return db; }
 

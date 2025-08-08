@@ -25,6 +25,8 @@ SettingsPanel::~SettingsPanel() { writeToDatabase(); }
 
 bool SettingsPanel::writeToDatabase() {
     // Сохранение записи из редактора с проверкой изменения
+    if(!isOpen) return false; // если не открыто, ничего не делаем
+
     std::string sql;
     sql = "UPDATE Settings SET organization='" + settingsDB[0].organization +
               "', note='" + settingsDB[0].note +
