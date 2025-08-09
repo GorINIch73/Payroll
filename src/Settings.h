@@ -4,15 +4,24 @@
 // #include "Sett /ingsPanel.h"
 #include <string>  
 #include <nlohmann/json.hpp>  
+#include <imgui.h>
+
 
 class Settings {  
 public:  
-    void Load(const std::string& path);  
-    void Save(const std::string& path);
+    void Load();  
+    void Save();
+    void AddToHistory(const std::string& filepath);
+    void ToggleTheme();
     void getDataFromDB(Database &db);
 
-    std::string lastDbPath;  
-    int theme = 0; 
+    // Конфигурационный файл
+    const std::string CONFIG_FILE = "config.json";
+
+    // Глобальные переменные для хранения истории и темы
+    std::vector<std::string> recentFiles;
+    ImGuiStyle currentStyle;
+    bool darkTheme = true;
     std::string organization="";
       
 };  

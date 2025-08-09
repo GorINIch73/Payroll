@@ -26,7 +26,7 @@ class GUI {
 
 
         Settings settings;
-        std::vector<std::string> recentFiles;
+        // std::vector<std::string> recentFiles;
         bool showSettings = false;
         bool showAbout = false;
         bool showFileDialogOpen = false;

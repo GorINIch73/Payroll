@@ -2,25 +2,92 @@
 #include "SettingsPanel.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <imgui.h>
 
-void Settings::Load(const std::string& path) {
-    std::ifstream file(path);
-    if (!file.is_open()) return;
 
-    nlohmann::json json;
-    file >> json;
-    
-    if (json.contains("lastDbPath")) lastDbPath = json["lastDbPath"];
-    if (json.contains("theme")) theme = json["theme"];
+using json = nlohmann::json;
+
+void Settings::Load() {
+
+    std::ifstream file(CONFIG_FILE);
+    if (file.good()) {
+       
+        try {
+            json config;
+            file >> config;
+            
+            // Загружаем историю файлов
+            if (config.contains("recent_files")) {
+                recentFiles = config["recent_files"].get<std::vector<std::string>>();
+            }
+            
+            // Загружаем тему
+            if (config.contains("dark_theme")) {
+                darkTheme = config["dark_theme"];
+                if (darkTheme) {
+                    ImGui::StyleColorsDark();
+                } else {
+                    ImGui::StyleColorsLight();
+                }
+                currentStyle = ImGui::GetStyle();
+            }
+            
+        } catch (const json::exception& e) {
+            // Ошибка при чтении файла - используем значения по умолчанию
+            recentFiles.clear();
+            darkTheme = true;
+            ImGui::StyleColorsDark();
+            currentStyle = ImGui::GetStyle();
+        }
+    }
 }
 
-void Settings::Save(const std::string& path) {
-    nlohmann::json json;
-    json["lastDbPath"] = lastDbPath;
-    json["theme"] = theme;
+void Settings::Save() {
 
-    std::ofstream file(path);
-    file << json.dump(4);
+    json config;
+    
+    // Сохраняем историю файлов (например, последние 10 файлов)
+    const size_t maxHistory = 10;
+    if (recentFiles.size() > maxHistory) {
+        recentFiles.erase(recentFiles.begin(), recentFiles.end() - maxHistory);
+    }
+    config["recent_files"] = recentFiles;
+    
+    // Сохраняем тему
+    config["dark_theme"] = darkTheme;
+    
+    std::ofstream file(CONFIG_FILE);
+    file << config.dump(4); // Красивое форматирование с отступами
+}
+
+// Добавление файла в историю
+void Settings::AddToHistory(const std::string& filepath) {
+
+
+    // Удаляем дубликаты
+    auto it = std::find(recentFiles.begin(), recentFiles.end(), filepath);
+    if (it != recentFiles.end()) {
+        recentFiles.erase(it);
+    }
+    
+    // Добавляем в конец
+    recentFiles.push_back(filepath);
+    
+    // Сохраняем изменения
+    Save();
+
+}
+
+// Переключение темы
+void Settings::ToggleTheme() {
+    darkTheme = !darkTheme;
+    if (darkTheme) {
+        ImGui::StyleColorsDark();
+    } else {
+        ImGui::StyleColorsLight();
+    }
+    currentStyle = ImGui::GetStyle();
+    Save();
 }
 
 void Settings::getDataFromDB(Database &db) {
@@ -44,3 +111,4 @@ void Settings::getDataFromDB(Database &db) {
     organization=settingsDB[0].organization;
     
 }
+

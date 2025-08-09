@@ -70,9 +70,7 @@ GUI::GUI(GLFWwindow *w)
                                               ICON_FA_FOLDER); // Папки
 
     // загружаем данные из конфига
-    settings.Load("config.json");
-    //	std::cout << "old file: " << settings.lastDbPath;
-    recentFiles.push_back(settings.lastDbPath);
+    settings.Load();
     g_MessageLog.Add("Добро пожаловать.");
 
 }
@@ -251,11 +249,21 @@ void GUI::showMainMenu() {
             }
             
             if (ImGui::BeginMenu("Последние файлы")) {
-                for (const auto &file : recentFiles) {
-                    if (ImGui::MenuItem(file.empty() ? "пусто" :  file.c_str())) {
-                        db.Open(file);
+                
+                // Отображаем в обратном порядке (последние - сверху)
+                for (auto it = settings.recentFiles.rbegin(); it != settings.recentFiles.rend(); ++it) {
+                    // if (ImGui::MenuItem(it.empty() ? "" : it->c_str())) {
+                    if (ImGui::MenuItem(it->c_str())) {
+                        // Обработка выбора файла из истории
+                        db.Open(it->c_str());
                         g_MessageLog.Add("База: "+db.getPath()+" открыта.", ImVec4(0.3, 0.6, 0.3, 1));
                     }
+                }
+
+                ImGui::Separator();
+                if (ImGui::MenuItem("Очистить историю")) {
+                    settings.recentFiles.clear();
+                    settings.Save();
                 }
                 ImGui::EndMenu();
             }
@@ -294,11 +302,25 @@ void GUI::showMainMenu() {
 
         if (ImGui::MenuItem("Отчет")) { /* ... */
         }
-        if (ImGui::MenuItem("Настройки")) { 
-            addSettingsPanel();
+        
+        if (ImGui::BeginMenu("Разное")) {
+            if (ImGui::MenuItem("Настройки")) { 
+                addSettingsPanel();
+            }
+        
+            ImGui::Separator();
+            if (ImGui::MenuItem(settings.darkTheme ? "Light Theme" : "Dark Theme")) {
+                settings.ToggleTheme();
+            }
+            ImGui::Separator();
+            
+            if (ImGui::MenuItem("О программе")) { /*showAbout(); */
+            
+            }
+            ImGui::EndMenu();
         }
-        if (ImGui::MenuItem("О программе")) { /*showAbout(); */
-        }
+        
+        
         ImGui::EndMainMenuBar();
     }
 }
@@ -349,9 +371,10 @@ void GUI::ShowFileDialogOpen() {
             else {
                 g_MessageLog.Add("База: "+filePathName+" открыта.", ImVec4(0.3, 0.6, 0.3, 1));
                 // Добавляем в список последних файлов и сохраняем
-                recentFiles.push_back(filePathName);
-                settings.lastDbPath = filePathName;
-                settings.Save("config.json");
+                settings.AddToHistory(filePathName);
+                // recentFiles.push_back(filePathName);
+                // settings.lastDbPath = filePathName;
+                // settings.Save("config.json");
             }
         }
 
@@ -407,9 +430,10 @@ void GUI::ShowFileDialogNew() {
                 db.CreateNewDatabase();
                 g_MessageLog.Add("База " + filePathName + "создана.", ImVec4(0.5, 0.3, 0.6, 1));
                 // Добавляем в список последних файлов и сохраняем
-                recentFiles.push_back(filePathName);
-                settings.lastDbPath = filePathName;
-                settings.Save("config.json");
+                settings.AddToHistory(filePathName);
+                // recentFiles.push_back(filePathName);
+                // settings.lastDbPath = filePathName;
+                // settings.Save("config.json");
             }
         }
 
@@ -471,9 +495,10 @@ void GUI::ShowFileDialogSaveAs() {
                     else {
                         g_MessageLog.Add("Скопированная база: "+filePathName+" открыта.", ImVec4(0.3, 0.6, 0.3, 1));
                         // Добавляем в список последних файлов и сохраняем
-                        recentFiles.push_back(filePathName);
-                        settings.lastDbPath = filePathName;
-                        settings.Save("config.json");
+                        settings.AddToHistory(filePathName);
+                        // recentFiles.push_back(filePathName);
+                        // settings.lastDbPath = filePathName;
+                        // settings.Save("config.json");
                     }
                 }
             }
@@ -491,10 +516,10 @@ void GUI::ShowSettings() {
         return;
 
     ImGui::Begin("Настройки", &showSettings);
-    ImGui::Combo("Тема", &settings.theme, "Светлая\0Темная\0");
+    // ImGui::Combo("Тема", &settings.theme, "Светлая\0Темная\0");
 
     if (ImGui::Button("Сохранить")) {
-        settings.Save("config.json");
+        settings.Save();
     }
     ImGui::End();
 }
