@@ -190,9 +190,11 @@ if(WIN32)
 else()
 
     # Копируем .so в папку сборки
-    file(COPY 
-        ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libharu/src/libhpdf.so
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+    add_custom_command(
+        TARGET Payroll POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libharu/src/libhpdf.so
+            ${CMAKE_CURRENT_BINARY_DIR}/
     )
 endif()
 
