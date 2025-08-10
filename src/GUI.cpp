@@ -15,6 +15,7 @@
 
 #include "ImGuiFileDialog.h"
 #include "PdfExporter.h"
+#include "imgui_components.h"
 
 #include <iostream>
 
@@ -89,8 +90,8 @@ void GUI::render() {
 
     showMainMenu();
 
-    if (showAbout)
-        ShowAbout();
+    ShowAbout();
+    
     if (showFileDialogOpen)
         ShowFileDialogOpen();
     if (showFileDialogNew)
@@ -307,6 +308,9 @@ void GUI::showMainMenu() {
             if (ImGui::MenuItem("Настройки")) { 
                 addSettingsPanel();
             }
+            if (ImGui::MenuItem("Очистка базы")) { 
+                showClearDB=true;
+            }
         
             ImGui::Separator();
             if (ImGui::MenuItem(settings.darkTheme ? "Light Theme" : "Dark Theme")) {
@@ -315,7 +319,8 @@ void GUI::showMainMenu() {
             ImGui::Separator();
             
             if (ImGui::MenuItem("О программе")) { /*showAbout(); */
-            
+                ImGui::OpenPopup("123");
+
             }
             ImGui::EndMenu();
         }
@@ -323,6 +328,8 @@ void GUI::showMainMenu() {
         
         ImGui::EndMainMenuBar();
     }
+
+
 }
 
 // сделать диалоги для -открыть, -сохранить как, -создать новую.  
@@ -511,26 +518,28 @@ void GUI::ShowFileDialogSaveAs() {
 }
 
 // переделано - поправить
-void GUI::ShowSettings() {
-    if (!showSettings)
+void GUI::ShowClearDB() {
+    if (!showClearDB)
         return;
 
-    ImGui::Begin("Настройки", &showSettings);
-    // ImGui::Combo("Тема", &settings.theme, "Светлая\0Темная\0");
+        ImGui::Checkbox("", &showClearDB);
 
-    if (ImGui::Button("Сохранить")) {
-        settings.Save();
-    }
-    ImGui::End();
 }
 
 void GUI::ShowAbout() {
-    if (!showAbout)
-        return;
+    ImGui::Text("123");
+    if (ImGui::BeginPopupModal("123", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        
+        g_MessageLog.Add("123");
+        ImGui::Text("GorINIch`tm 2025");
+        if (ImGui::Button("Закрыть")) {
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
 
-    ImGui::Begin("Об авторах", &showAbout);
 
-    ImGui::End();
 }
 
 void GUI::GeneratePdfReport() {

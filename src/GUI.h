@@ -27,8 +27,8 @@ class GUI {
 
         Settings settings;
         // std::vector<std::string> recentFiles;
-        bool showSettings = false;
-        bool showAbout = false;
+        bool showClearDB = false;
+        // bool showAbout = false;
         bool showFileDialogOpen = false;
         bool showFileDialogNew = false;
         bool showFileDialogSaveAs = false;
@@ -45,7 +45,7 @@ class GUI {
         void addSettingsPanel();
 
         void showMainMenu();
-        void ShowSettings();
+        void ShowClearDB();
         void ShowAbout();
         void ShowFileDialogOpen();
         void ShowFileDialogNew();
