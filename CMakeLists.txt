@@ -171,9 +171,11 @@ if(WIN32)
 else()
 
     # Копируем .so в папку сборки
-    file(COPY 
-        ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libclip/libclip.so # не проверял
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+    add_custom_command(
+        TARGET Payroll POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/clip/libclip.so
+            ${CMAKE_CURRENT_BINARY_DIR}/
     )
 endif()
 # копируем библиотеку libharu
