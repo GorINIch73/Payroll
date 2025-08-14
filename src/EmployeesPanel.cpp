@@ -348,17 +348,18 @@ void EmployeesPanel::render() {
         // Добавляем пнель запроса
         auto newPanel = std::make_unique<ReviewPanel>(
             db,
-            "SELECT e.id, i.full_name, p.job_title, e.rate, e.contract,"
-            "e.contract_found, e.certificate_found, e.note FROM  Employees e "
-            "LEFT JOIN Individuals i ON e.individual_id = i.id LEFT JOIN "
-            "Positions p ON e.position_id = p.id");
+            "SELECT e.id, i.full_name, p.job_title, e.rate, d.division_name, "
+            "e.contract, e.contract_found, e.certificate_found, e.note FROM  "
+            "Employees e LEFT JOIN Individuals i ON e.individual_id = i.id "
+            "LEFT JOIN Positions p ON e.position_id = p.id LEFT JOIN Divisions "
+            "d ON e.division_id = d.id");
         // auto newPanel = std::make_unique<PositionsPanel>(db);
         manager_panels.addPanel(std::move(newPanel));
         manager_panels.getNextEnd() = true;
     }
 
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Отчет по запросу");
+        ImGui::SetTooltip("Список сотрудников");
     }
     ImGui::PopStyleColor();
 

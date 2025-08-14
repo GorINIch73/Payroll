@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 
-
 class Panel {
     public:
         Panel(const std::string &name)
@@ -22,11 +21,9 @@ class Panel {
         bool isOpen;
 };
 
-
 // void render_all_panels();
 // bool push_panel(Panel *pnl);
 // bool remove_panel();
 
 // inline std::vector<std::unique_ptr<Panel>> manager_panels;
 // inline std::vector<std::shared_ptr<Panel>> manager_panels;
-

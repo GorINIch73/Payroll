@@ -1,6 +1,8 @@
 
 #include "AccrualsPanel.h"
 #include "Icons.h"
+#include "Manager.h"
+#include "ReviewPanel.h"
 #include "imgui_stdlib.h"
 #include <algorithm>
 // #include <cfloat>
@@ -208,6 +210,33 @@ void AccrualsPanel::render() {
         ImGui::EndTooltip();
     }
 
+    // Отчет по запросу
+    ImGui::SameLine();
+    // добавление записи
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.5f, 1.0f)); //
+    if (ImGui::Button(ICON_FA_LIST)) {
+
+        // Добавляем пнель запроса
+        auto newPanel = std::make_unique<ReviewPanel>(
+            db, "SELECT a.name, i.full_name || '-' || p.job_title || '-' || "
+                "d.division_name || '-' || e.rate || '-' || e.contract AS "
+                "fname, o.number || '-' || o.date AS onum, "
+                "printf('%.2f',l.amount), l.verified, l.note FROM Accruals a "
+                "LEFT JOIN List_accruals l ON l.accrual_id = a.id LEFT JOIN "
+                "Orders o ON l.order_id = o.id LEFT JOIN Statements s ON s.id "
+                "= l.statement_id LEFT JOIN Employees e ON e.id=s.employee_id "
+                "LEFT JOIN  Individuals i ON e.individual_id= i.id LEFT JOIN "
+                "Positions p ON e.position_id = p.id LEFT JOIN Divisions d ON "
+                "e.division_id = d.id ORDER BY a.name, fname, onum");
+        // auto newPanel = std::make_unique<PositionsPanel>(db);
+        manager_panels.addPanel(std::move(newPanel));
+        manager_panels.getNextEnd() = true;
+    }
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Начисления в разрезе приказов");
+    }
+    ImGui::PopStyleColor();
     // }
     // ImGui::End();
 

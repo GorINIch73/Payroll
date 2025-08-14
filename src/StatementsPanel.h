@@ -7,15 +7,16 @@
 #include <utility>
 #include <vector>
 
-// ведомость 
+// ведомость
 struct Statement {
         int id = -1;
         int month = 0;
         int employee_id = -1;
         std::string employee = "";
         double salary = 0.0f; // оклад по договору только для расчетов
-        double rate = 0.0f; // ставка только для расчетов
-        double norm = 0.0f; // норма чсот из справочника должностей только для расчетов
+        double rate = 0.0f;   // ставка только для расчетов
+        double norm =
+            0.0f; // норма чсот из справочника должностей только для расчетов
         double hours_norm = 0.0f;
         double hours_worked = 0.0f;
         bool timesheet_verified = false;
@@ -55,22 +56,26 @@ class StatementsPanel : public Panel {
 
     private:
         Database &db;
-        std::vector<Statement> statements;    // основная таблица расчетных ведомостей
-        std::vector<List_accrual> list_accruals;    // основная таблица списка начислений для ведомости
+        std::vector<Statement>
+            statements; // основная таблица расчетных ведомостей
+        std::vector<List_accrual>
+            list_accruals; // основная таблица списка начислений для ведомости
         std::vector<ComboItem> employees; // таблица сотрудников для комбо
-        std::vector<ComboItem> accruals;   // таблица видов начислений для комбо
-        std::vector<ComboItem> orders;   // таблица приказов для комбо
+        std::vector<ComboItem> accruals;  // таблица видов начислений для комбо
+        std::vector<ComboItem> orders;    // таблица приказов для комбо
 
-        ImGuiTextFilter global_filter;  // <-- Глобальный фильтр
+        ImGuiTextFilter global_filter; // <-- Глобальный фильтр
+        ImGuiTextFilter
+            global_filter_accurals; // <-- Глобальный фильтр начислений
         int selectedIndex = -1;
         Statement currentRecord;
         int oldIndex = -1; // для отслеживание изменения выделенной строки
 
         List_accrual currentAccrualRecord;
         int selectedAccrualIndex = -1; // текущая строка начислений
-        int oldAccrualIndex = -1; // для отслеживание изменения выделенной строки начислений
-
+        int oldAccrualIndex =
+            -1; // для отслеживание изменения выделенной строки начислений
 
         double summaAccirals = 0.0f; // Сумма всех начислений
-        double sSalary = 0.0f; // суммарный оклад
+        double sSalary = 0.0f;       // суммарный оклад
 };

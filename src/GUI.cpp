@@ -143,7 +143,7 @@ void GUI::render() {
                     ImGui::EndTabItem();
                 }
                 if (!panel->getIsOpen()) {
-                    printf("%s close\n", panel->getName());
+                    // printf("%s close\n", panel->getName());
                     manager_panels.removePanel(i);
                     // Действие при закрытии Tab
 
@@ -236,7 +236,9 @@ void GUI::showMainMenu() {
             }
             if (ImGui::MenuItem("Закрыть базу")) {
                 // перед закрытием комитнуть изменения, закрыть все окна
+                manager_panels.removeAllPanels();
                 db.Close();
+                g_MessageLog.Add("База закрыта.");
             }
 
             if (ImGui::MenuItem("Создать новую базу")) {

@@ -477,16 +477,23 @@ void StatementsPanel::render() {
         ImGui::SameLine();
         ImGui::Text("Фильтр:");
         ImGui::SameLine();
-        global_filter.Draw("##global_filter",
-                           ImGui::GetContentRegionAvail().x - 100);
         // global_filter.Draw("##global_filter",
-        // ImGui::GetContentRegionAvail().x*0.8f);
+        //                    ImGui::GetContentRegionAvail().x - 100);
+        global_filter.Draw("##global_filter",
+                           (ImGui::GetContentRegionAvail().x - 100) * 0.5f);
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Фильтр");
+            ImGui::SetTooltip("Фильтр ведомостей");
+        }
+        ImGui::SameLine();
+        global_filter_accurals.Draw("##global_filter_accurals",
+                                    ImGui::GetContentRegionAvail().x - 100);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Фильтр начислений");
         }
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_ERASER)) {
             global_filter.Clear();
+            global_filter_accurals.Clear();
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Очистить фильтр");
@@ -500,15 +507,24 @@ void StatementsPanel::render() {
         if (ImGui::Button(ICON_FA_LIST)) {
 
             // Добавляем пнель запроса
-            auto newPanel =
-                std::make_unique<ReviewPanel>(db, "SELECT * FROM  Statements");
+            auto newPanel = std::make_unique<ReviewPanel>(
+                db,
+                "SELECT s.id, s.month, i.full_name, p.job_title, "
+                "d.division_name, e.contract, printf('%.2f', p.salary), "
+                "e.rate, s.hours_norm, s.hours_worked, s.timesheet_verified, "
+                "s.note FROM Statements s LEFT JOIN Employees e ON "
+                "s.employee_id=e.id LEFT JOIN Individuals i ON "
+                "e.individual_id= i.id LEFT JOIN Positions p ON e.position_id "
+                "= p.id LEFT JOIN Divisions d ON e.division_id = d.id"
+
+            );
             // auto newPanel = std::make_unique<PositionsPanel>(db);
             manager_panels.addPanel(std::move(newPanel));
             manager_panels.getNextEnd() = true;
         }
 
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Отчет по запросу");
+            ImGui::SetTooltip("Список ведомосей");
         }
         ImGui::PopStyleColor();
 
@@ -785,6 +801,18 @@ void StatementsPanel::render() {
                     continue;
                 }
 
+                // фильр по начислению
+                std::string row_text_accurals;
+                // if (global_filter_accurals.IsActive()) {
+                row_text_accurals += list_accruals[i].accrual + " ";
+                row_text_accurals += list_accruals[i].order + " ";
+                // }
+                // если не совпадает с фильтром, то пропускаем строку
+                if (!global_filter_accurals.PassFilter(
+                        row_text_accurals.c_str())) {
+                    continue;
+                }
+
                 // расчет суммы начислений
                 summaAccirals = summaAccirals + list_accruals[i].amount;
                 // расчет суммарного фактического оклада (сумма всех начислений
@@ -1016,15 +1044,34 @@ void StatementsPanel::render() {
             // фильр - определяем нудна ли нам текущая строка для отображения
 
             // Собираем всю строку в один текст для фильтрации
+            // фильтр медомостей
             std::string row_text;
+            row_text += std::string(months[statements[i].month - 1]) + " ";
             row_text += statements[i].employee + " ";
             row_text += std::to_string(statements[i].salary) + " ";
             row_text += statements[i].note;
+            // if (global_filter.IsActive())
+            //     std::cout << row_text << std::endl;
+
             // если не совпадает с фильтром, то пропускаем строку
             if (!global_filter.PassFilter(row_text.c_str())) {
                 continue;
             }
+            // фильтр начтислений
+            std::string row_text_accurals;
+            if (global_filter_accurals.IsActive()) {
+                for (size_t a = 0; a < list_accruals.size(); a++) {
+                    if (list_accruals[a].statement_id == statements[i].id) {
+                        row_text_accurals += list_accruals[a].accrual + " ";
+                        row_text_accurals += list_accruals[a].order + " ";
+                    }
+                }
+            }
 
+            // если не совпадает с фильтром, то пропускаем строку
+            if (!global_filter_accurals.PassFilter(row_text_accurals.c_str())) {
+                continue;
+            }
             // фильтр только по сотруднику
             // if (!global_filter.PassFilter(statements[i].employee.c_str())) {
             //      continue;
