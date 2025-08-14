@@ -29,11 +29,12 @@ bool AccrualsPanel::writeToDatabase() {
     if (isCurrentChanged()) {
         sql = "UPDATE Accruals SET name='" + currentRecord.name +
 
-            "', percentage=" + std::to_string(currentRecord.percentage) + 
+              "', percentage=" + std::to_string(currentRecord.percentage) +
 
-            ", this_salary=" + std::to_string(currentRecord.this_salary ? 1 : 0) +
-            ", note='" + currentRecord.note +
-            "' WHERE id=" + std::to_string(currentRecord.id) + ";";
+              ", this_salary=" +
+              std::to_string(currentRecord.this_salary ? 1 : 0) + ", note='" +
+              currentRecord.note +
+              "' WHERE id=" + std::to_string(currentRecord.id) + ";";
 
         // std::cout << currentRecord.note << std::endl;
         // std::cout << sql << std::endl;
@@ -68,14 +69,15 @@ bool AccrualsPanel::delRecord() {
 void AccrualsPanel::refresh() {
     accruals.clear();
     // Загружаем данные из БД (упрощенный пример)
-    const char *sql = "SELECT id, name, percentage, this_salary, note FROM Accruals;";
+    const char *sql =
+        "SELECT id, name, percentage, this_salary, note FROM Accruals;";
     sqlite3_exec(
         db.getHandle(), sql,
         [](void *data, int argc, char **argv, char **) {
             auto *list = static_cast<std::vector<Accrual> *>(data);
             // не забываем проверять текстовые поля на NULL
-            list->emplace_back(Accrual{std::stoi(argv[0]),
-                argv[1] ? argv[1] : "",
+            list->emplace_back(Accrual{
+                std::stoi(argv[0]), argv[1] ? argv[1] : "",
                 argv[2] ? std::stod(argv[2]) : 0,
                 argv[3] ? (std::stoi(argv[3]) > 0 ? true : false) : false,
                 argv[4] ? argv[4] : ""});
@@ -114,7 +116,8 @@ void AccrualsPanel::render() {
         return;
     // проверка на существование таблицы - вдруг база пауста или не та
     if (!db.tableExists("Accruals")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Табилца начислений отсуствует!");
+        ImGui::TextColored(ImVec4(1, 0, 0, 1),
+                           "Табилца начислений отсуствует!");
         return;
     }
 
@@ -132,7 +135,10 @@ void AccrualsPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
     if (ImGui::Button(ICON_FA_REFRESH)) {
+        writeToDatabase();
         refresh();
+        // дергаем индекс, что бы система перечитала выделенное
+        oldIndex = -1;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Обновить данные");
@@ -160,7 +166,7 @@ void AccrualsPanel::render() {
                           ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
 
-        if(selectedIndex>=0)
+        if (selectedIndex >= 0)
             ImGui::OpenPopup("Удаление");
     }
 
@@ -230,11 +236,12 @@ void AccrualsPanel::render() {
     ImGui::SameLine();
     ImGui::SetCursorPosX(
         ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-        ImGui::CalcTextSize(std::to_string(currentRecord.percentage).c_str()).x);
+        ImGui::CalcTextSize(std::to_string(currentRecord.percentage).c_str())
+            .x);
     ImGui::SetNextItemWidth(
-        ImGui::CalcTextSize(std::to_string(currentRecord.percentage).c_str()).x);
+        ImGui::CalcTextSize(std::to_string(currentRecord.percentage).c_str())
+            .x);
     ImGui::InputDouble("##процент", &currentRecord.percentage, 0, 0, "%0.0f");
-
 
     ToggleButton("Это оклад:", currentRecord.this_salary);
 
@@ -295,7 +302,8 @@ void AccrualsPanel::render() {
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
             ImGui::SetCursorPosX(
                 ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-                ImGui::CalcTextSize(std::to_string(accruals[i].percentage).c_str())
+                ImGui::CalcTextSize(
+                    std::to_string(accruals[i].percentage).c_str())
                     .x -
                 ImGui::GetStyle().ItemSpacing.x);
             ImGui::Text("%0.0f", accruals[i].percentage);
@@ -305,14 +313,11 @@ void AccrualsPanel::render() {
             ImGui::TableSetColumnIndex(3);
             ImGui::Text("%s", accruals[i].this_salary ? "+" : " ");
 
-
-
             ImGui::TableSetColumnIndex(4);
             // обрабатываем многострочку - просто срезаем после возврата строки
-            ImGui::Text("%s",
-                        accruals[i]
-                            .note.substr(0, accruals[i].note.find("\n"))
-                            .c_str());
+            ImGui::Text("%s", accruals[i]
+                                  .note.substr(0, accruals[i].note.find("\n"))
+                                  .c_str());
             // выделена другая строка
             if (oldIndex != selectedIndex) {
                 // записать старые данные

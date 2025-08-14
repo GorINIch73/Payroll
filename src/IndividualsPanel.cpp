@@ -121,7 +121,10 @@ void IndividualsPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
     if (ImGui::Button(ICON_FA_REFRESH)) {
+        writeToDatabase();
         refresh();
+        // дергаем индекс, что бы система перечитала выделенное
+        oldIndex = -1;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Обновить данные");
@@ -149,7 +152,7 @@ void IndividualsPanel::render() {
                           ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
 
-        if(selectedIndex>=0)
+        if (selectedIndex >= 0)
             ImGui::OpenPopup("Удаление");
     }
 

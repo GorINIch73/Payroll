@@ -16,7 +16,7 @@
 class GUI {
     public:
         GUI(GLFWwindow *w);
-         //void Init(GLFWwindow *window); // Принимаем окно
+        // void Init(GLFWwindow *window); // Принимаем окно
         void render();
 
     private:
@@ -24,16 +24,14 @@ class GUI {
         Database db;
         // std::vector<std::unique_ptr<Panel>> panels;
 
-
         Settings settings;
         // std::vector<std::string> recentFiles;
         bool showClearDB = false;
-        // bool showAbout = false;
+        bool showAbout = false;
         bool showFileDialogOpen = false;
         bool showFileDialogNew = false;
         bool showFileDialogSaveAs = false;
         // bool goEndPanel  = false;
-
 
         void addEmployeesPanel();
         void addIndividualsPanel();

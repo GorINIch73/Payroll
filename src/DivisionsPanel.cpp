@@ -27,8 +27,8 @@ bool DivisionsPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
     std::string sql;
     if (isCurrentChanged()) {
-        sql = "UPDATE Divisions SET division_name='" + currentRecord.division_name +
-              "', note='" + currentRecord.note +
+        sql = "UPDATE Divisions SET division_name='" +
+              currentRecord.division_name + "', note='" + currentRecord.note +
               "' WHERE id=" + std::to_string(currentRecord.id) + ";";
 
         // std::cout << currentRecord.note << std::endl;
@@ -70,8 +70,8 @@ void DivisionsPanel::refresh() {
         [](void *data, int argc, char **argv, char **) {
             auto *list = static_cast<std::vector<Division> *>(data);
             // не забываем проверять текстовые поля на NULL
-            list->emplace_back(Division{std::stoi(argv[0]), argv[1],
-                                          argv[2] ? argv[2] : ""});
+            list->emplace_back(
+                Division{std::stoi(argv[0]), argv[1], argv[2] ? argv[2] : ""});
             return 0;
         },
         &divisions, nullptr);
@@ -121,7 +121,10 @@ void DivisionsPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
     if (ImGui::Button(ICON_FA_REFRESH)) {
+        writeToDatabase();
         refresh();
+        // дергаем индекс, что бы система перечитала выделенное
+        oldIndex = -1;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Обновить данные");
@@ -149,7 +152,7 @@ void DivisionsPanel::render() {
                           ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
 
-        if(selectedIndex>=0)
+        if (selectedIndex >= 0)
             ImGui::OpenPopup("Удаление");
     }
 
@@ -259,22 +262,9 @@ void DivisionsPanel::render() {
             ImGui::Text("%s", divisions[i].division_name.c_str());
             ImGui::TableSetColumnIndex(2);
             // обрабатываем многострочку - просто срезаем после возврата строки
-            ImGui::Text("%s",
-                        divisions[i]
-                            .note.substr(0, divisions[i].note.find("\n"))
-                            .c_str());
-            // ImGui::TableSetColumnIndex(3);
-            // // выравнивание вправо
-            // ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-            // ImGui::SetCursorPosX(
-            //     ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
-            //     ImGui::CalcTextSize(
-            //         std::to_string(divisions[i].salary).c_str())
-            //         .x -
-            //     ImGui::GetStyle().ItemSpacing.x);
-            // ImGui::Text("%.2f", divisions[i].salary);
-            // ImGui::PopStyleVar();
-            //
+            ImGui::Text("%s", divisions[i]
+                                  .note.substr(0, divisions[i].note.find("\n"))
+                                  .c_str());
             // выделена другая строка
             if (oldIndex != selectedIndex) {
                 // записать старые данные
@@ -283,9 +273,6 @@ void DivisionsPanel::render() {
                     divisions[oldIndex] = currentRecord;
                     // printf("Запись обновлена\n");
                 }
-                // printf("старый указатель %i, новый указатель %i \n",
-                // oldIndex,
-                //        selectedEmployee);
                 // взять в редактор новые данные
                 currentRecord = divisions[selectedIndex];
                 oldIndex = selectedIndex;
@@ -299,19 +286,6 @@ void DivisionsPanel::render() {
         }
         ImGui::EndTable();
     }
-
-    //    ImGui::End();
-
-    // ImGui::EndChild();
-
-    // ImGui::BeginChild();
-    // setEmployee(listPanel.GetSelEmployee());
-
-    //    ImGui::Begin(name.c_str(), &isOpen);
-
-    // ImGui::BeginChild(name.c_str());
-
-    //    ImGui::End();
 
     ImGui::EndChild();
 }

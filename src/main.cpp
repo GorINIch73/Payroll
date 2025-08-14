@@ -1,16 +1,22 @@
 
 #include "Database.h"
-#include "Panel.h"
 #include "EmployeesPanel.h"
 #include "GUI.h"
+#include "Panel.h"
 
 #include <GLFW/glfw3.h>
+// #include <fontconfig/fontconfig.h> // Добавьте этот заголовочный файл
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <iostream>
 
 int main() {
+    // Инициализация fontconfig (должна быть ДО создания ImGui-контекста)
+    // if (!FcInit()) {
+    //     fprintf(stderr, "Failed to initialize FontConfig\n");
+    //     return -1;
+    // }
     // Инициализация GLFW и OpenGL
     glfwInit();
     GLFWwindow *window =
@@ -68,11 +74,11 @@ int main() {
         // ImGui::SetNextWindowPos(ImVec2(0, 0));
         // ImGui::SetNextWindowSize(io.DisplaySize);
         //
-        
-// сотрудники
 
-    // auto newPanel = std::make_unique<EmployeesPanel>(db);
-    // manager_panels.push_back(std::move(newPanel));
+        // сотрудники
+
+        // auto newPanel = std::make_unique<EmployeesPanel>(db);
+        // manager_panels.push_back(std::move(newPanel));
         gui.render();
 
         ImGui::Render();

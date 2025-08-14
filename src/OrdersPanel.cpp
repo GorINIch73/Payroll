@@ -28,11 +28,12 @@ bool OrdersPanel::writeToDatabase() {
     std::string sql;
     if (isCurrentChanged()) {
         sql = "UPDATE Orders SET number='" + currentRecord.number +
-            "', date='" + currentRecord.date +
-            "', found=" + std::to_string(currentRecord.found ? 1 : 0) +
-            ", protocol_found=" + std::to_string(currentRecord.protocol_found ? 1 : 0) +
-            ", note='" + currentRecord.note +
-            "' WHERE id=" + std::to_string(currentRecord.id) + ";";
+              "', date='" + currentRecord.date +
+              "', found=" + std::to_string(currentRecord.found ? 1 : 0) +
+              ", protocol_found=" +
+              std::to_string(currentRecord.protocol_found ? 1 : 0) +
+              ", note='" + currentRecord.note +
+              "' WHERE id=" + std::to_string(currentRecord.id) + ";";
 
         // std::cout << currentRecord.note << std::endl;
         // std::cout << sql << std::endl;
@@ -56,8 +57,9 @@ bool OrdersPanel::delRecord() {
     // хз надо ли контролить зависимые записи или пусть пустыми остаются
     if (currentRecord.id >= 0) {
         std::string sql;
-        sql = "DELETE FROM Orders WHERE id =" +
-              std::to_string(currentRecord.id) + ";";
+        sql =
+            "DELETE FROM Orders WHERE id =" + std::to_string(currentRecord.id) +
+            ";";
         return db.Execute(sql);
     }
 
@@ -67,18 +69,19 @@ bool OrdersPanel::delRecord() {
 void OrdersPanel::refresh() {
     orders.clear();
     // Загружаем данные из БД (упрощенный пример)
-    const char *sql = "SELECT id, number, date, found, protocol_found, note FROM Orders;";
+    const char *sql =
+        "SELECT id, number, date, found, protocol_found, note FROM Orders;";
     sqlite3_exec(
         db.getHandle(), sql,
         [](void *data, int argc, char **argv, char **) {
             auto *list = static_cast<std::vector<Order> *>(data);
             // не забываем проверять текстовые поля на NULL
-            list->emplace_back(Order{std::stoi(argv[0]),
-                argv[1] ? argv[1] : "",
-                argv[2] ? argv[2] : "2000-01-01",
-                argv[3] ? (std::stoi(argv[3]) > 0 ? true : false) : false,
-                argv[4] ? (std::stoi(argv[4]) > 0 ? true : false) : false,
-                argv[5] ? argv[5] : ""});
+            list->emplace_back(
+                Order{std::stoi(argv[0]), argv[1] ? argv[1] : "",
+                      argv[2] ? argv[2] : "2000-01-01",
+                      argv[3] ? (std::stoi(argv[3]) > 0 ? true : false) : false,
+                      argv[4] ? (std::stoi(argv[4]) > 0 ? true : false) : false,
+                      argv[5] ? argv[5] : ""});
             return 0;
         },
         &orders, nullptr);
@@ -134,7 +137,10 @@ void OrdersPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
     if (ImGui::Button(ICON_FA_REFRESH)) {
+        writeToDatabase();
         refresh();
+        // дергаем индекс, что бы система перечитала выделенное
+        oldIndex = -1;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Обновить данные");
@@ -162,7 +168,7 @@ void OrdersPanel::render() {
                           ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
 
-        if(selectedIndex>=0)
+        if (selectedIndex >= 0)
             ImGui::OpenPopup("Удаление");
     }
 
@@ -228,14 +234,12 @@ void OrdersPanel::render() {
     ImGui::InputText("##Номер", &currentRecord.number);
     // ImGui::InputText("Примечание", &currentRecord.note);
 
-    
     if (InputDate("Дата приказа:    ", currentRecord.date)) {
         // Дата была изменена
-                
+
         // IMGUI_LOG("Новая дата: %s", date.c_str());
         // std::cout <<  date << std::endl;
     }
-    
 
     ToggleButton("Приказ найден:", currentRecord.found);
     ImGui::SameLine();
@@ -307,10 +311,9 @@ void OrdersPanel::render() {
             // примечание
             ImGui::TableSetColumnIndex(5);
             // обрабатываем многострочку - просто срезаем после возврата строки
-            ImGui::Text("%s",
-                        orders[i]
-                            .note.substr(0, orders[i].note.find("\n"))
-                            .c_str());
+            ImGui::Text(
+                "%s",
+                orders[i].note.substr(0, orders[i].note.find("\n")).c_str());
             // выделена другая строка
             if (oldIndex != selectedIndex) {
                 // записать старые данные
@@ -335,7 +338,6 @@ void OrdersPanel::render() {
         }
         ImGui::EndTable();
     }
-
 
     ImGui::EndChild();
 }

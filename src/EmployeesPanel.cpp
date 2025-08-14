@@ -1,13 +1,13 @@
 
 #include "EmployeesPanel.h"
-#include "Panel.h"
-#include "ReviewPanel.h"
-#include "PositionsPanel.h"
-#include "IndividualsPanel.h"
 #include "DivisionsPanel.h"
 #include "Icons.h"
-#include "imgui_stdlib.h"
+#include "IndividualsPanel.h"
 #include "Manager.h"
+#include "Panel.h"
+#include "PositionsPanel.h"
+#include "ReviewPanel.h"
+#include "imgui_stdlib.h"
 #include <algorithm>
 // #include <cfloat>
 // #include <charconv>
@@ -47,12 +47,11 @@ bool EmployeesPanel::writeToDatabase() {
             (currentRecord.position_id > 0
                  ? ", position_id=" + std::to_string(currentRecord.position_id)
                  : "") +
-            ", rate=" + std::to_string(currentRecord.rate) + 
+            ", rate=" + std::to_string(currentRecord.rate) +
             (currentRecord.division_id > 0
                  ? ", division_id=" + std::to_string(currentRecord.division_id)
                  : "") +
-           ", contract='" + 
-            currentRecord.contract + "', contract_found=" +
+            ", contract='" + currentRecord.contract + "', contract_found=" +
             std::to_string(currentRecord.contract_found ? 1 : 0) +
             ", certificate_found=" +
             std::to_string(currentRecord.certificate_found ? 1 : 0) +
@@ -101,11 +100,14 @@ void EmployeesPanel::refresh() {
     // "
     //                   "contract_found, certificate_found, note FROM
     //                   Employees;";
-    const char *sql = "SELECT e.id, e.individual_id, i.full_name, e.position_id, p.job_title,"
-                "printf('%.2f', salary) , e.rate, e.division_id, d.division_name, e.contract,"
-                "e.contract_found, e.certificate_found, e.note FROM  Employees e "
-                "LEFT JOIN Individuals i ON e.individual_id= i.id LEFT JOIN Positions p "
-                "ON e.position_id = p.id LEFT JOIN Divisions d ON e.division_id = d.id";
+    const char *sql =
+        "SELECT e.id, e.individual_id, i.full_name, e.position_id, p.job_title,"
+        "printf('%.2f', salary) , e.rate, e.division_id, d.division_name, "
+        "e.contract,"
+        "e.contract_found, e.certificate_found, e.note FROM  Employees e "
+        "LEFT JOIN Individuals i ON e.individual_id= i.id LEFT JOIN Positions "
+        "p "
+        "ON e.position_id = p.id LEFT JOIN Divisions d ON e.division_id = d.id";
     sqlite3_exec(
         db.getHandle(), sql,
         [](void *data, int argc, char **argv, char **) {
@@ -169,12 +171,11 @@ void EmployeesPanel::refresh() {
         &positions, nullptr);
 
     // std::cout << "рефреш должностей норм" << std::endl;
-    
+
     // таблица отделений
     divisions.clear();
-    const char *sqlD =
-        "SELECT id, division_name "
-        "FROM Divisions;";
+    const char *sqlD = "SELECT id, division_name "
+                       "FROM Divisions;";
     sqlite3_exec(
         db.getHandle(), sqlD,
         [](void *data, int argc, char **argv, char **) {
@@ -247,7 +248,10 @@ void EmployeesPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
     if (ImGui::Button(ICON_FA_REFRESH)) {
+        writeToDatabase();
         refresh();
+        // дергаем индекс, что бы система перечитала выделенное
+        oldIndex = -1;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Обновить данные");
@@ -274,7 +278,7 @@ void EmployeesPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
-        if(selectedIndex>=0)
+        if (selectedIndex >= 0)
             ImGui::OpenPopup("Удаление");
     }
 
@@ -315,16 +319,18 @@ void EmployeesPanel::render() {
         // ImGui::BulletText("Удаление выбранного сотрудника");
         ImGui::EndTooltip();
     }
-    
+
     // Глобальный фильтр
     ImGui::SameLine();
     ImGui::Text("Фильтр:");
     ImGui::SameLine();
-    global_filter.Draw("##global_filter", ImGui::GetContentRegionAvail().x-100);
-    // global_filter.Draw("##global_filter", ImGui::GetContentRegionAvail().x*0.8f);
+    global_filter.Draw("##global_filter",
+                       ImGui::GetContentRegionAvail().x - 100);
+    // global_filter.Draw("##global_filter",
+    // ImGui::GetContentRegionAvail().x*0.8f);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Фильтр");
-    }   
+    }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_ERASER)) {
         global_filter.Clear();
@@ -336,25 +342,25 @@ void EmployeesPanel::render() {
     // Отчет по запросу
     ImGui::SameLine();
     // добавление записи
-    ImGui::PushStyleColor(ImGuiCol_Button,
-                          ImVec4(0.2f, 0.7f, 0.5f, 1.0f)); // 
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.5f, 1.0f)); //
     if (ImGui::Button(ICON_FA_LIST)) {
-        
 
-    // Добавляем пнель запроса
-    auto newPanel = std::make_unique<ReviewPanel>(db,"SELECT e.id, i.full_name, p.job_title, e.rate, e.contract,"
-                                                  "e.contract_found, e.certificate_found, e.note FROM  Employees e "
-                                                  "LEFT JOIN Individuals i ON e.individual_id = i.id LEFT JOIN Positions p ON e.position_id = p.id");
-    // auto newPanel = std::make_unique<PositionsPanel>(db);
-    manager_panels.addPanel(std::move(newPanel));
-    manager_panels.getNextEnd()=true;
+        // Добавляем пнель запроса
+        auto newPanel = std::make_unique<ReviewPanel>(
+            db,
+            "SELECT e.id, i.full_name, p.job_title, e.rate, e.contract,"
+            "e.contract_found, e.certificate_found, e.note FROM  Employees e "
+            "LEFT JOIN Individuals i ON e.individual_id = i.id LEFT JOIN "
+            "Positions p ON e.position_id = p.id");
+        // auto newPanel = std::make_unique<PositionsPanel>(db);
+        manager_panels.addPanel(std::move(newPanel));
+        manager_panels.getNextEnd() = true;
     }
 
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Отчет по запросу");
     }
     ImGui::PopStyleColor();
-    
 
     // ImGui::End();
 
@@ -364,7 +370,7 @@ void EmployeesPanel::render() {
     // ImGui::SeparatorText("редактор");
 
     ImGui::Separator();
-    
+
     ImGui::Text("%s %d", "ID :", currentRecord.id);
     // если нужно, то вокус на поле ввода
     if (focusFirst) {
@@ -382,7 +388,7 @@ void EmployeesPanel::render() {
     if (ImGui::Button(ICON_FA_USER)) {
         auto newPanel = std::make_unique<IndividualsPanel>(db);
         manager_panels.addPanel(std::move(newPanel));
-        manager_panels.getNextEnd()=true;
+        manager_panels.getNextEnd() = true;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Физлица");
@@ -411,7 +417,7 @@ void EmployeesPanel::render() {
     if (ImGui::Button(ICON_FA_TIE)) {
         auto newPanel = std::make_unique<PositionsPanel>(db);
         manager_panels.addPanel(std::move(newPanel));
-        manager_panels.getNextEnd()=true;
+        manager_panels.getNextEnd() = true;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Должности");
@@ -448,7 +454,7 @@ void EmployeesPanel::render() {
     if (ImGui::Button(ICON_FA_DIVISIONS)) {
         auto newPanel = std::make_unique<DivisionsPanel>(db);
         manager_panels.addPanel(std::move(newPanel));
-        manager_panels.getNextEnd()=true;
+        manager_panels.getNextEnd() = true;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Отделения");
@@ -468,7 +474,6 @@ void EmployeesPanel::render() {
             currentRecord.division_id = it->id;
         }
     }
-
 
     ImGui::Text("Трудовой договор:");
     ImGui::SameLine();
@@ -528,7 +533,7 @@ void EmployeesPanel::render() {
 
         for (size_t i = 0; i < employees.size(); ++i) {
 
-            //фильр - определяем нудна ли нам текущая строка для отображения
+            // фильр - определяем нудна ли нам текущая строка для отображения
 
             // Собираем всю строку в один текст для фильтрации
             std::string row_text;
@@ -545,8 +550,7 @@ void EmployeesPanel::render() {
                 continue;
             }
 
-
-            //таблица
+            // таблица
             ImGui::TableNextRow();
             // ID
             ImGui::TableSetColumnIndex(0);
@@ -573,8 +577,11 @@ void EmployeesPanel::render() {
             //         .x -
             //     ImGui::GetStyle().ItemSpacing.x);
             char buf_salary[32];
-            snprintf(buf_salary, sizeof(buf_salary), "%.2f", employees[i].salary);
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_salary).x);
+            snprintf(buf_salary, sizeof(buf_salary), "%.2f",
+                     employees[i].salary);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                                 ImGui::GetContentRegionAvail().x -
+                                 ImGui::CalcTextSize(buf_salary).x);
             ImGui::Text("%0.2f", employees[i].salary);
             ImGui::PopStyleVar();
             // ставка
@@ -588,13 +595,15 @@ void EmployeesPanel::render() {
             //     ImGui::GetStyle().ItemSpacing.x);
             char buf_rate[32];
             snprintf(buf_rate, sizeof(buf_rate), "%.2f", employees[i].rate);
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(buf_rate).x);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                                 ImGui::GetContentRegionAvail().x -
+                                 ImGui::CalcTextSize(buf_rate).x);
             ImGui::Text("%0.2f", employees[i].rate);
             ImGui::PopStyleVar();
             // Отделение
             ImGui::TableSetColumnIndex(5);
             ImGui::Text("%s", employees[i].division.c_str());
-            // контракт 
+            // контракт
             ImGui::TableSetColumnIndex(6);
             ImGui::Text("%s", employees[i].contract.c_str());
             // контракт найден
