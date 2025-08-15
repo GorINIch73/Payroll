@@ -61,5 +61,8 @@ cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 libwinpthread-1.dll
 libgcc_s_seh-1.dll
 libstdc++-6.dll
-
+glfw3.dll
+libpng16-16.dll
+libsqlite3-0.dll
+zlib1.dll
 

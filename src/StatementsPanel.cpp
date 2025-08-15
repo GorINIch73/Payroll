@@ -1060,7 +1060,7 @@ void StatementsPanel::render() {
             // Собираем всю строку в один текст для фильтрации
             // фильтр медомостей
             std::string row_text;
-            row_text += std::string(months[statements[i].month - 1]) + " ";
+            if (statements[i].month>0) row_text += std::string(months[statements[i].month - 1]) + " ";
             row_text += statements[i].employee + " ";
             row_text += std::to_string(statements[i].salary) + " ";
             row_text += statements[i].note;
