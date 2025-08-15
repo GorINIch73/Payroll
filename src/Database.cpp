@@ -107,6 +107,7 @@ bool Database::CreateNewDatabase() {
         name       TEXT,
         percentage REAL,
         this_salary INTEGER DEFAULT (0),
+        verification INTEGER DEFAULT (0),
         note       TEXT
     );
 
@@ -156,10 +157,9 @@ bool Database::CreateNewDatabase() {
     return Execute(sql);
 }
 
-
 int Database::CopyDatabase(const std::string &dest_path) {
-    sqlite3* dest_db;
-    
+    sqlite3 *dest_db;
+
     // Проверка открыта ли база
     if (!db) {
         fprintf(stderr, "база не открыта: %s\n", dbPath);
@@ -168,16 +168,18 @@ int Database::CopyDatabase(const std::string &dest_path) {
 
     // Открываем/создаем целевую базу
     if (sqlite3_open(dest_path.c_str(), &dest_db) != SQLITE_OK) {
-        fprintf(stderr, "Не удалось создать целевую базу: %s\n", sqlite3_errmsg(dest_db));
- //        sqlite3_close(db);
+        fprintf(stderr, "Не удалось создать целевую базу: %s\n",
+                sqlite3_errmsg(dest_db));
+        //        sqlite3_close(db);
         return -1;
     }
 
     // Инициализируем механизм копирования
-    sqlite3_backup* backup = sqlite3_backup_init(dest_db, "main", db, "main");
+    sqlite3_backup *backup = sqlite3_backup_init(dest_db, "main", db, "main");
     if (!backup) {
-        fprintf(stderr, "Ошибка инициализации копирования: %s\n", sqlite3_errmsg(dest_db));
-   //     sqlite3_close(db);
+        fprintf(stderr, "Ошибка инициализации копирования: %s\n",
+                sqlite3_errmsg(dest_db));
+        //     sqlite3_close(db);
         sqlite3_close(dest_db);
         return -1;
     }
@@ -193,12 +195,11 @@ int Database::CopyDatabase(const std::string &dest_path) {
     }
 
     // Закрываем соединения
-  //    sqlite3_close(src_db);
+    //    sqlite3_close(src_db);
     sqlite3_close(dest_db);
 
     return rc;
 }
-
 
 bool Database::tableExists(const std::string &tableName) {
     std::string sql =
@@ -215,13 +216,15 @@ bool Database::tableExists(const std::string &tableName) {
     return exists;
 }
 
-
-std::vector<std::map<std::string, std::string>> Database::FetchAll(const std::string& query) {
+std::vector<std::map<std::string, std::string>>
+Database::FetchAll(const std::string &query) {
     std::vector<std::map<std::string, std::string>> result;
-    sqlite3_stmt* stmt;
+    sqlite3_stmt *stmt;
 
-    if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+    if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) !=
+        SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db)
+                  << std::endl;
         return result;
     }
 
@@ -229,8 +232,8 @@ std::vector<std::map<std::string, std::string>> Database::FetchAll(const std::st
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         std::map<std::string, std::string> row;
         for (int i = 0; i < cols; i++) {
-            const char* colName = sqlite3_column_name(stmt, i);
-            const char* colValue = (const char*)sqlite3_column_text(stmt, i);
+            const char *colName = sqlite3_column_name(stmt, i);
+            const char *colValue = (const char *)sqlite3_column_text(stmt, i);
             row[colName] = colValue ? colValue : "NULL";
         }
         result.push_back(row);
@@ -239,5 +242,3 @@ std::vector<std::map<std::string, std::string>> Database::FetchAll(const std::st
     sqlite3_finalize(stmt);
     return result;
 }
-
-

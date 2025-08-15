@@ -35,6 +35,7 @@ struct List_accrual {
         int order_id = -1;
         std::string order = "";
         bool verified = false;
+        bool verification = false;
         std::string note = "";
 };
 

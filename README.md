@@ -1,7 +1,7 @@
 # Аудит начисления заработной платы
 Пишем и изучаем IMGUI помаленьку
 
-![Ведомости](images/Statements.jpg)
+![Ведомости](images/Statements.png)
 
 ![Сотрудники](images/Employees.jpg)
 

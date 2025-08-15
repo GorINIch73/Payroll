@@ -225,7 +225,8 @@ void StatementsPanel::refreshAccruals() {
     const char *sqlL =
         "SELECT l.id, l.statement_id, l.accrual_id, a.name, a.percentage, "
         "a.this_salary, l.amount,"
-        "l.order_id, o.number || '-' || o.date , l.verified, l.note FROM "
+        "l.order_id, o.number || '-' || o.date , l.verified, a.verification, "
+        "l.note FROM "
         "List_accruals l LEFT JOIN Accruals a "
         "ON l.accrual_id=a.id LEFT JOIN Orders o ON l.order_id= o.id";
 
@@ -244,7 +245,8 @@ void StatementsPanel::refreshAccruals() {
                 argv[7] ? std::stoi(argv[7]) : -1,
                 argv[8] ? argv[8] : "",
                 argv[9] ? (std::stoi(argv[9]) > 0 ? true : false) : false,
-                argv[10] ? argv[10] : "",
+                argv[10] ? (std::stoi(argv[10]) > 0 ? true : false) : false,
+                argv[11] ? argv[11] : "",
             });
             return 0;
         },
@@ -824,6 +826,18 @@ void StatementsPanel::render() {
                 // --------------------------------------------------------
                 // ЩЩЩЩЩЩЩЩo
                 ImGui::TableNextRow();
+                // Условия для цветов
+                ImU32 row_color;
+                // смотрим есть ли непроверенные начисления
+                if (!list_accruals[i].verified &&
+                    list_accruals[i].verification) {
+
+                    row_color = ImGui::GetColorU32(
+                        ImVec4(0.5f, 0.2f, 0.2f, 0.3f)); // Красный
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
+                                           row_color);
+                }
+
                 // подсветка выбранной строки
                 if (selectedAccrualIndex == i) {
                     ImGui::TableSetBgColor(
@@ -1079,6 +1093,32 @@ void StatementsPanel::render() {
 
             // таблица
             ImGui::TableNextRow();
+
+            // Условия для цветов
+            ImU32 row_color;
+            // если проверен табель
+            if (statements[i].timesheet_verified) {
+                row_color = ImGui::GetColorU32(
+                    ImVec4(0.2f, 0.5f, 0.2f, 0.3f)); // зеленый
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, row_color);
+            }
+
+            // смотрим есть ли непроверенные начисления
+            bool vrf = false;
+            for (size_t a = 0; a < list_accruals.size(); a++) {
+                if (list_accruals[a].statement_id == statements[i].id) {
+                    vrf = vrf || (!list_accruals[a].verified &&
+                                  list_accruals[a].verification);
+                }
+            }
+
+            if (vrf) {
+                row_color = ImGui::GetColorU32(
+                    ImVec4(0.5f, 0.2f, 0.2f, 0.3f)); // Красный
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, row_color);
+            }
+            // ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, row_color);
+
             // ID
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки

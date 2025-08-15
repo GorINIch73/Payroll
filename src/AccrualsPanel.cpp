@@ -30,18 +30,18 @@ bool AccrualsPanel::writeToDatabase() {
     std::string sql;
     if (isCurrentChanged()) {
         sql = "UPDATE Accruals SET name='" + currentRecord.name +
-
               "', percentage=" + std::to_string(currentRecord.percentage) +
-
               ", this_salary=" +
-              std::to_string(currentRecord.this_salary ? 1 : 0) + ", note='" +
+              std::to_string(currentRecord.this_salary ? 1 : 0) +
+              ", verification=" +
+              std::to_string(currentRecord.verification ? 1 : 0) + ", note='" +
               currentRecord.note +
               "' WHERE id=" + std::to_string(currentRecord.id) + ";";
 
         // std::cout << currentRecord.note << std::endl;
         // std::cout << sql << std::endl;
 
-        printf("Обновление записи ... \n");
+        // printf("Обновление записи ... \n");
         return db.Execute(sql);
     }
 
@@ -71,8 +71,8 @@ bool AccrualsPanel::delRecord() {
 void AccrualsPanel::refresh() {
     accruals.clear();
     // Загружаем данные из БД (упрощенный пример)
-    const char *sql =
-        "SELECT id, name, percentage, this_salary, note FROM Accruals;";
+    const char *sql = "SELECT id, name, percentage, this_salary, verification, "
+                      "note FROM Accruals;";
     sqlite3_exec(
         db.getHandle(), sql,
         [](void *data, int argc, char **argv, char **) {
@@ -82,7 +82,8 @@ void AccrualsPanel::refresh() {
                 std::stoi(argv[0]), argv[1] ? argv[1] : "",
                 argv[2] ? std::stod(argv[2]) : 0,
                 argv[3] ? (std::stoi(argv[3]) > 0 ? true : false) : false,
-                argv[4] ? argv[4] : ""});
+                argv[4] ? (std::stoi(argv[4]) > 0 ? true : false) : false,
+                argv[5] ? argv[5] : ""});
             return 0;
         },
         &accruals, nullptr);
@@ -106,6 +107,8 @@ bool AccrualsPanel::isCurrentChanged() {
     if (currentRecord.percentage != accruals[oldIndex].percentage)
         return true;
     if (currentRecord.this_salary != accruals[oldIndex].this_salary)
+        return true;
+    if (currentRecord.verification != accruals[oldIndex].verification)
         return true;
     if (currentRecord.note != accruals[oldIndex].note)
         return true;
@@ -273,6 +276,8 @@ void AccrualsPanel::render() {
     ImGui::InputDouble("##процент", &currentRecord.percentage, 0, 0, "%0.0f");
 
     ToggleButton("Это оклад:", currentRecord.this_salary);
+    ImGui::SameLine();
+    ToggleButton("Подлежит сверке:", currentRecord.verification);
 
     // мультистрочник - морока прям
     ImGui::Text("Примечание:");
@@ -290,7 +295,7 @@ void AccrualsPanel::render() {
     ImGui::Separator();
     // ImGui::PopStyleColor();
 
-    if (ImGui::BeginTable("Accruals", 5,
+    if (ImGui::BeginTable("Accruals", 6,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                               ImGuiTableFlags_RowBg |
                               ImGuiTableFlags_ScrollY)) {
@@ -305,6 +310,10 @@ void AccrualsPanel::render() {
                                     ImGuiTableColumnFlags_NoResize,
                                 100.0f);
         ImGui::TableSetupColumn("это оклад",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                10.0f);
+        ImGui::TableSetupColumn("сверка",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
                                 10.0f);
@@ -338,11 +347,15 @@ void AccrualsPanel::render() {
             ImGui::Text("%0.0f", accruals[i].percentage);
             ImGui::PopStyleVar();
 
-            // зависимость от времени
+            // это оклад
             ImGui::TableSetColumnIndex(3);
             ImGui::Text("%s", accruals[i].this_salary ? "+" : " ");
 
+            // для сверки
             ImGui::TableSetColumnIndex(4);
+            ImGui::Text("%s", accruals[i].verification ? "+" : " ");
+
+            ImGui::TableSetColumnIndex(5);
             // обрабатываем многострочку - просто срезаем после возврата строки
             ImGui::Text("%s", accruals[i]
                                   .note.substr(0, accruals[i].note.find("\n"))

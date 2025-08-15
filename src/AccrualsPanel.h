@@ -9,7 +9,8 @@ struct Accrual {
         int id = -1;
         std::string name = "";
         double percentage = 0;
-        bool  this_salary = false;
+        bool this_salary = false;
+        bool verification = false;
         std::string note = "";
 };
 
