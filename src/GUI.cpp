@@ -317,9 +317,12 @@ void GUI::showMainMenu() {
             ImGui::EndMenu();
         }
 
-        if (ImGui::MenuItem("Отчет")) { /* ... */
+        if (ImGui::BeginMenu("Отчеты")) {
+            if (ImGui::MenuItem("Список сотрудников")) {
+                PdfReportListEmployees();
+            }
+            ImGui::EndMenu();
         }
-
         if (ImGui::BeginMenu("Разное")) {
             if (ImGui::MenuItem("Настройки")) {
                 addSettingsPanel();
@@ -721,8 +724,17 @@ void GUI::ShowAbout() {
     }
 }
 
-void GUI::GeneratePdfReport() {
-    auto data = db.FetchAll("SELECT * FROM users");
-    PdfExporter exporter;
-    exporter.ExportToPdf(data, "report.pdf");
+void GUI::PdfReportListEmployees() {
+    // auto data = db.FetchAll("SELECT * FROM users");
+    // PdfExporter exporter;
+    // exporter.ExportToPdf(data, "report.pdf");
+
+    PdfExporter exporter = PdfExporter(
+        db, "SELECT e.id, i.full_name, p.job_title, e.rate, d.division_name, "
+            "e.contract, e.contract_found, e.certificate_found, e.note FROM  "
+            "Employees e LEFT JOIN Individuals i ON e.individual_id = i.id "
+            "LEFT JOIN Positions p ON e.position_id = p.id LEFT JOIN Divisions "
+            "d ON e.division_id = d.id");
+    exporter.GeneratePDFListEmployees("ListEmployees.pdf");
+    exporter.OpenPDF("ListEmployees.pdf");
 }

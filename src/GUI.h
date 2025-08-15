@@ -48,5 +48,5 @@ class GUI {
         void ShowFileDialogOpen();
         void ShowFileDialogNew();
         void ShowFileDialogSaveAs();
-        void GeneratePdfReport();
+        void PdfReportListEmployees();
 };

@@ -21,32 +21,30 @@
 #include <sstream>
 
 // #define CLIP_WIC_SUPPORT false
-// #define CLIP_ENABLE_IMAGE false 
-// #include <clip.h> 
-
+// #define CLIP_ENABLE_IMAGE false
+// #include <clip.h>
 
 ReviewPanel::ReviewPanel(Database &db, std::string qr)
     : Panel("Запрос"),
       db(db),
-      query(qr){
+      query(qr) {
     refresh();
     // std::cout << "проехали конструктор " << std::endl;
 }
 
-ReviewPanel::~ReviewPanel() {  
+ReviewPanel::~ReviewPanel() {
 
-
-    std::cout << "destroy SQL query" << std::endl;
+    // std::cout << "destroy SQL query" << std::endl;
 }
-
 
 void ReviewPanel::refresh() {
 
     // Основная таблица
     //
 
-    sqlite3_stmt* stmt;
-    if (sqlite3_prepare_v2(db.getHandle(), query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db.getHandle(), query.c_str(), -1, &stmt, nullptr) !=
+        SQLITE_OK) {
         return;
     }
 
@@ -56,7 +54,7 @@ void ReviewPanel::refresh() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         TableRow row;
         for (int i = 0; i < columnCount; ++i) {
-            const char* text = (const char*)sqlite3_column_text(stmt, i);
+            const char *text = (const char *)sqlite3_column_text(stmt, i);
             // std::cout << " add " << text << std::endl;
             row.columns.push_back(text ? text : "NULL");
         }
@@ -72,8 +70,9 @@ void ReviewPanel::CopySelectionToClipboard() {
 
     int min_col, max_col, min_row, max_row;
     // если выделена только одна ячейка
-    if (selection_start.x !=-1 && selection_end.x == -1) {
-        ImGui::SetClipboardText(data[selection_start.y].columns[selection_start.x].c_str());
+    if (selection_start.x != -1 && selection_end.x == -1) {
+        ImGui::SetClipboardText(
+            data[selection_start.y].columns[selection_start.x].c_str());
         return;
     }
 
@@ -81,11 +80,10 @@ void ReviewPanel::CopySelectionToClipboard() {
     if (selection_start.x == -1 || selection_end.x == -1) {
         // если нет выделения копируем все
         min_col = 0;
-        max_col = data[0].columns.size()-1;
+        max_col = data[0].columns.size() - 1;
         min_row = 0;
-        max_row = data.size()-1;
-    }
-    else {
+        max_row = data.size() - 1;
+    } else {
 
         // Определяем границы выделенной области
         min_col = std::min(selection_start.x, selection_end.x);
@@ -119,7 +117,6 @@ void ReviewPanel::CopySelectionToClipboard() {
         ImGui::SetClipboardText(clipboard_text.str().c_str());
     }
 
-
     // std::string clipboard_text;
     //
     // for (int row = 0; row < data.size(); ++row) {
@@ -150,20 +147,21 @@ float ReviewPanel::CalculateSelectionSum() {
 
     // Проходим по всем ячейкам в диапазоне
     for (int row = min_row; row <= max_row; ++row) {
-        if (row < 0 || row >= data.size()) continue;
-        
-        for (int col = min_col; col <= max_col; ++col) {
-            if (col < 0 || col >= data[0].columns.size()) continue;
+        if (row < 0 || row >= data.size())
+            continue;
 
-            const std::string& cell_text = data[row].columns[col];
-            
+        for (int col = min_col; col <= max_col; ++col) {
+            if (col < 0 || col >= data[0].columns.size())
+                continue;
+
+            const std::string &cell_text = data[row].columns[col];
+
             // Пытаемся преобразовать текст в число
             try {
                 float value = std::stof(cell_text);
                 sum += value;
                 cells_counted++;
-            } 
-            catch (...) {
+            } catch (...) {
                 // Не числовое значение - пропускаем
                 continue;
             }
@@ -187,7 +185,7 @@ void ReviewPanel::render() {
     // bool focusFirst = false;
 
     // std::cout << "render SQL Review." << std::endl;
-    
+
     ImGui::BeginChild(name.c_str());
 
     ImGui::BeginGroup();
@@ -208,11 +206,10 @@ void ReviewPanel::render() {
     // }
     // ImGui::End();
 
-
-
-        // Вывод данных в таблицу ImGui
+    // Вывод данных в таблицу ImGui
     // if (!data.empty()) {
-    //         if (ImGui::BeginTable("Database Table", data[0].columns.size(), ImGuiTableFlags_Borders)) {
+    //         if (ImGui::BeginTable("Database Table", data[0].columns.size(),
+    //         ImGuiTableFlags_Borders)) {
     //             // Заголовки столбцов
     //             // for (const auto& columnName : data[0].columns) {
     //             //     ImGui::TableSetupColumn(columnName.c_str());
@@ -232,7 +229,8 @@ void ReviewPanel::render() {
     //                 for (const auto& cell : row.columns) {
     //                     // std::cout << " | ";
     //                     ImGui::TableSetColumnIndex(i);
-    //                     // ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex());
+    //                     //
+    //                     ImGui::TableSetColumnIndex(ImGui::TableGetColumnIndex());
     //                     // std::cout << " " << cell.c_str();
     //                     ImGui::Text("%s", cell.c_str());
     //                     ++i;
@@ -243,18 +241,17 @@ void ReviewPanel::render() {
     //         }
     // }
 
-
-// --------------------------------------------------------------
+    // --------------------------------------------------------------
 
     column_filter_enabled.resize(data[0].columns.size(), false);
     column_filters.resize(data[0].columns.size(), "");
 
     // Фильтрация данных
     std::vector<std::vector<std::string>> filtered_rows;
-    for (const auto& row : data) {
+    for (const auto &row : data) {
         bool passes_global_filter = false;
         std::string row_text;
-        for (const auto& cell : row.columns) {
+        for (const auto &cell : row.columns) {
             row_text += cell + " ";
         }
         passes_global_filter = global_filter.PassFilter(row_text.c_str());
@@ -262,7 +259,8 @@ void ReviewPanel::render() {
         bool passes_column_filters = true;
         for (size_t col = 0; col < data[0].columns.size(); ++col) {
             if (column_filter_enabled[col] && !column_filters[col].empty()) {
-                if (row.columns[col].find(column_filters[col]) == std::string::npos) {
+                if (row.columns[col].find(column_filters[col]) ==
+                    std::string::npos) {
                     passes_column_filters = false;
                     break;
                 }
@@ -285,9 +283,10 @@ void ReviewPanel::render() {
     ImGui::Separator();
 
     // Таблица
-    if (ImGui::BeginTable("MyTable", data[0].columns.size(), 
-        ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | 
-        ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY)) {
+    if (ImGui::BeginTable("MyTable", data[0].columns.size(),
+                          ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
+                              ImGuiTableFlags_RowBg |
+                              ImGuiTableFlags_ScrollY)) {
 
         // Заголовки столбцов + фильтры
         for (size_t col = 0; col < data[0].columns.size(); ++col) {
@@ -303,7 +302,8 @@ void ReviewPanel::render() {
 
             bool filter_enabled = column_filter_enabled[col];
             if (ImGui::Checkbox("##filter_enabled", &filter_enabled)) {
-                column_filter_enabled[col] = filter_enabled;  // Возвращаем значение
+                column_filter_enabled[col] =
+                    filter_enabled; // Возвращаем значение
             }
             ImGui::SameLine();
             ImGui::PushItemWidth(-FLT_MIN);
@@ -318,7 +318,7 @@ void ReviewPanel::render() {
             ImGui::TableNextRow();
             for (size_t col = 0; col < data[0].columns.size(); ++col) {
                 ImGui::TableSetColumnIndex(col);
-                const auto& cell_value = filtered_rows[row][col];
+                const auto &cell_value = filtered_rows[row][col];
 
                 // if (col == 0) {
                 //     // выделение всей    строки
@@ -331,38 +331,40 @@ void ReviewPanel::render() {
                 // }
                 // else  ImGui::Text("%s", cell_value.c_str());
 
-
                 // --- Проверка, является ли ячейка частью выделения ---
                 bool is_in_range = false;
                 if (selection_start.x != -1 && selection_end.x != -1) {
                     // Выделен диапазон (после второго клика)
-                    is_in_range = (col >= std::min(selection_start.x, selection_end.x)) && 
-                                 (col <= std::max(selection_start.x, selection_end.x)) &&
-                                 (row >= std::min(selection_start.y, selection_end.y)) && 
-                                 (row <= std::max(selection_start.y, selection_end.y));
+                    is_in_range =
+                        (col >= std::min(selection_start.x, selection_end.x)) &&
+                        (col <= std::max(selection_start.x, selection_end.x)) &&
+                        (row >= std::min(selection_start.y, selection_end.y)) &&
+                        (row <= std::max(selection_start.y, selection_end.y));
                 }
 
                 // --- Подсветка ячеек ---
-                if (waiting_for_end && row == selection_start.y && col == selection_start.x) {
+                if (waiting_for_end && row == selection_start.y &&
+                    col == selection_start.x) {
                     // Особый цвет для начальной ячейки (ожидание второго клика)
-                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, start_cell_color);
-                } 
-                else if (is_in_range) {
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg,
+                                           start_cell_color);
+                } else if (is_in_range) {
                     // Стандартный цвет для выделенного диапазона
-                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(ImGuiCol_Header));
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg,
+                                           ImGui::GetColorU32(ImGuiCol_Header));
                 }
 
                 // --- 1. Создаем невидимую кнопку для обработки кликов ---
-                // ImGui::InvisibleButton("##cell", ImGui::GetContentRegionAvail());
+                // ImGui::InvisibleButton("##cell",
+                // ImGui::GetContentRegionAvail());
 
                 // --- Отображение текста ячейки ---
                 ImGui::Text("%s", cell_value.c_str());
-        
+
                 // --- Обработка кликов (правая - меню) ---
                 if (ImGui::IsItemHovered()) {
                     // ЛКМ - выделение
                     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
- 
 
                         if (!waiting_for_end) {
                             // Первый клик - устанавливаем начало
@@ -373,24 +375,22 @@ void ReviewPanel::render() {
                             // Второй клик - устанавливаем конец
                             selection_end = ImVec2(col, row);
                             waiting_for_end = false;
-                            // std::cout << "end:" << col << ":" << row << std::endl;
-                            
+                            // std::cout << "end:" << col << ":" << row <<
+                            // std::endl;
+
                             // Если кликнули ту же ячейку дважды - сбрасываем
-                            if (selection_start.x == selection_end.x && 
+                            if (selection_start.x == selection_end.x &&
                                 selection_start.y == selection_end.y) {
                                 selection_start = ImVec2(-1, -1);
                                 selection_end = ImVec2(-1, -1);
                             }
                         }
-
                     }
                     if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
                         ImGui::OpenPopup("CellContextMenu"); // Открываем меню
                     }
                 }
             }
-        
-
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
@@ -399,7 +399,8 @@ void ReviewPanel::render() {
             selection_end = ImVec2(-1, -1);
         }
         if (waiting_for_end) {
-            ImGui::SetTooltip("Кликните конечную ячейку для выделения диапазона");
+            ImGui::SetTooltip(
+                "Кликните конечную ячейку для выделения диапазона");
         }
         // Контекстное меню для копирования
         if (ImGui::BeginPopupContextWindow("CellContextMenu")) {
@@ -421,14 +422,15 @@ void ReviewPanel::render() {
         ImGui::EndTable();
 
         // сброс выделения вне таблицы
-        // if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered()) {
+        // if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+        // !ImGui::IsAnyItemHovered()) {
         //     selection_start = ImVec2(-1, -1);
         //     selection_end = ImVec2(-1, -1);
         //     waiting_for_end = false;
         // }
     }
 
-        //    // Копирование по Ctrl+C
-        // if (ImGui::IsKeyPressed(ImGuiKey_C) && ImGui::GetIO().KeyCtrl) {
+    //    // Копирование по Ctrl+C
+    // if (ImGui::IsKeyPressed(ImGuiKey_C) && ImGui::GetIO().KeyCtrl) {
     ImGui::EndChild();
 }
