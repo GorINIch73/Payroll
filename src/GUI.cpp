@@ -31,25 +31,14 @@
 GUI::GUI(GLFWwindow *w)
     : window(w) {
 
-    // db = base;
-    // Создаем панели при старте
-    //    auto listPanel = std::make_unique<EmployeeListPanel>(db);
-    //    auto editPanel = std::make_unique<EmployeeEditPanel>(db, *listPanel);
-
-    // Добавляем в вектор
-    //     manager_panels.push_back(std::move(listPanel));
-    //     manager_panels.push_back(std::move(editPanel));
-
-    // Настройка иконок в ImGuiFileDialog
-
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // грузим русский шрифт
-    ImFont *font =
-        io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf", 24.0f, nullptr,
-                                     io.Fonts->GetGlyphRangesCyrillic());
+    ImFont *font = io.Fonts->AddFontFromFileTTF(
+        find_font("NotoSans-Regular.ttf").string().c_str(), 24.0f, nullptr,
+        io.Fonts->GetGlyphRangesCyrillic());
 
     // Добавляем иконки
     ImFontConfig config;
@@ -58,12 +47,15 @@ GUI::GUI(GLFWwindow *w)
     config.PixelSnapH = true;
 
     static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-    io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
-                                 icons_ranges);
+    io.Fonts->AddFontFromFileTTF(
+        find_font("fontawesome-webfont.ttf").string().c_str(), 24.0f, &config,
+        icons_ranges);
 
     // загружаем данные из конфига
     settings.Load();
     g_MessageLog.Add("Добро пожаловать.");
+    // g_MessageLog.Add(find_font("NotoSans-Regular.ttf").string());
+    // g_MessageLog.Add(find_font("fontawesome-webfont.ttf").string());
 }
 
 void GUI::render() {
@@ -264,6 +256,8 @@ void GUI::showMainMenu() {
                         } else {
                             g_MessageLog.Add("База: " + file_o + " открыта.",
                                              ImVec4(0.3, 0.6, 0.3, 1));
+                            // заголовок окна
+                            glfwSetWindowTitle(window, file_o.c_str());
                         }
                     }
                 }
@@ -402,9 +396,8 @@ void GUI::ShowFileDialogOpen() {
                                  ImVec4(0.3, 0.6, 0.3, 1));
                 // Добавляем в список последних файлов и сохраняем
                 settings.AddToHistory(filePathName);
-                // recentFiles.push_back(filePathName);
-                // settings.lastDbPath = filePathName;
-                // settings.Save("config.json");
+                // заголовок окна
+                glfwSetWindowTitle(window, filePathName.c_str());
             }
         }
 
@@ -478,9 +471,8 @@ void GUI::ShowFileDialogNew() {
                                  ImVec4(0.5, 0.3, 0.6, 1));
                 // Добавляем в список последних файлов и сохраняем
                 settings.AddToHistory(filePathName);
-                // recentFiles.push_back(filePathName);
-                // settings.lastDbPath = filePathName;
-                // settings.Save("config.json");
+                // заголовок окна
+                glfwSetWindowTitle(window, filePathName.c_str());
             }
         }
 
@@ -562,9 +554,8 @@ void GUI::ShowFileDialogSaveAs() {
                                          ImVec4(0.3, 0.6, 0.3, 1));
                         // Добавляем в список последних файлов и сохраняем
                         settings.AddToHistory(filePathName);
-                        // recentFiles.push_back(filePathName);
-                        // settings.lastDbPath = filePathName;
-                        // settings.Save("config.json");
+                        // заголовок окна
+                        glfwSetWindowTitle(window, filePathName.c_str());
                     }
                 }
             }

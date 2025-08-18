@@ -2,11 +2,38 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <filesystem>
 #include <imgui.h>
 #include <iostream>
 #include <string>
 #include <unicode/utf8.h>
 #include <vector>
+
+namespace fs = std::filesystem;
+fs::path find_font(const std::string &fontName) {
+    // 1. Проверяем путь рядом с исполняемым файлом (для разработки)
+    fs::path ss = fontName;
+    fs::path localFont = fs::current_path() / "fonts" / ss;
+    if (fs::exists(localFont)) {
+        return localFont;
+    }
+
+    // g_MessageLog.Add("localFont:" + localFont.string());
+
+    // 2. Проверяем системную установку (/usr/share/my_app/fonts/)
+    fs::path systemFont = "/usr/local/share/Payroll/fonts" / ss;
+    // printf("systemFont:");
+    // std::cout << "dsadasda";
+    // printf("systemFont: %s", systemFont.string().c_str());
+    if (fs::exists(systemFont)) {
+        return systemFont;
+    }
+
+    // g_MessageLog.Add("systemFont:" + systemFont.string());
+
+    // 3. Fallback: относительный путь (если ничего не найдено)
+    return "fonts" / ss;
+}
 
 // лог сообытий
 void MessageLog::Add(const std::string &msg, ImVec4 color) {

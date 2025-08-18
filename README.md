@@ -54,6 +54,11 @@ cmake --build .
 ## для релиза
 ``` bash
 cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+
+
+make
+sudo make install  # Установка в систему
+
 ```
 
 ## для автономной работы

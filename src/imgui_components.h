@@ -1,9 +1,13 @@
 #pragma once
 
 #include <algorithm>
+#include <filesystem>
 #include <imgui.h>
 #include <string>
 #include <vector>
+
+// поиск шрифтов
+std::filesystem::path find_font(const std::string &fontName);
 
 // отображение лога событий
 struct MessageLog {

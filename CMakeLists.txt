@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 4.0)
 project(Payroll)
 
+# Настройка стандарта C++
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -61,11 +64,11 @@ set(JSON_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/json/include)
 
 # add_compile_definitions(CLIP_WIC_SUPPORT=false)
 
-option(CLIP_ENABLE_IMAGE "CPIL IMAGE" off)
+# option(CLIP_ENABLE_IMAGE "CPIL IMAGE" off)
 
-add_subdirectory(thirdparty/clip)
+# add_subdirectory(thirdparty/clip)
 # Указываем пути к установленной библиотеке
-set(CLIP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/clip)
+# set(CLIP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/clip)
 
 
 
@@ -128,7 +131,7 @@ target_include_directories(Payroll  PRIVATE
 	${LIBHARU_INCLUDE_DIR}
     ${LIBHARU_INCLUDE_DIR_CONF}
 	${JSON_INCLUDE_DIR}
-    ${CLIP_INCLUDE_DIR}
+    # ${CLIP_INCLUDE_DIR}
 
 	${ImGuiFileDialog_DIR}
 
@@ -138,7 +141,7 @@ target_include_directories(Payroll  PRIVATE
 target_link_libraries(Payroll PRIVATE
     glfw
     hpdf
-    clip
+    # clip 
     ${OPENGL_LIBRARIES}
     ${SQLite3_LIBRARY} 
 )
@@ -146,38 +149,40 @@ target_link_libraries(Payroll PRIVATE
 # Копируем Фонты после сборки
 add_custom_command(
     TARGET Payroll POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/fonts/"
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/font/NotoSans-Regular.ttf
-        ${CMAKE_CURRENT_BINARY_DIR}/
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/fonts/NotoSans-Regular.ttf
+        ${CMAKE_CURRENT_BINARY_DIR}/fonts/
 )
 
 add_custom_command(
     TARGET Payroll POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/fonts/"
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/font/fontawesome-webfont.ttf
-        ${CMAKE_CURRENT_BINARY_DIR}/
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/fonts/fontawesome-webfont.ttf
+        ${CMAKE_CURRENT_BINARY_DIR}/fonts/
 )
 
 
-# копируем библиотеку clip
-if(WIN32)
-    # Копируем DLL после сборки
-    add_custom_command(
-        TARGET Payroll POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/clip/libclip.dll
-            ${CMAKE_CURRENT_BINARY_DIR}/
-    )
-else()
-
-    # Копируем .so в папку сборки
-    add_custom_command(
-        TARGET Payroll POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/clip/libclip.so
-            ${CMAKE_CURRENT_BINARY_DIR}/
-    )
-endif()
+# копируем библиотеку clip - пока не нужен!
+# if(WIN32)
+#     # Копируем DLL после сборки
+#     add_custom_command(
+#         TARGET Payroll POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#             ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/clip/libclip.dll
+#             ${CMAKE_CURRENT_BINARY_DIR}/
+#     )
+# else()
+#
+#     # Копируем .so в папку сборки
+#     add_custom_command(
+#         TARGET Payroll POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy
+#             ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/clip/libclip.so
+#             ${CMAKE_CURRENT_BINARY_DIR}/
+#     )
+# endif()
 # копируем библиотеку libharu
 if(WIN32)
     # Копируем DLL после сборки
@@ -211,3 +216,20 @@ if(WIN32)
         $<TARGET_FILE_DIR:Payroll>
     )
 endif()
+
+
+
+# Установка в /usr/local/bin (по умолчанию)
+install(TARGETS Payroll DESTINATION bin)
+
+# Настройка CPack для создания .tar.gz и .deb/.rpm (если нужно)
+include(InstallRequiredSystemLibraries)
+set(CPACK_GENERATOR "TGZ")  # Для Arch Linux можно использовать TGZ или STGZ
+set(CPACK_PACKAGE_NAME "Payroll-app")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_DESCRIPTION "Payroll ImGUI + SQLite3 App")
+set(CPACK_PACKAGE_CONTACT "ggorinich@@gmail.com")
+include(CPack)
+
+# Установка шрифтов в систему (если нужно)
+install(DIRECTORY src/fonts/ DESTINATION share/${PROJECT_NAME}/fonts)
