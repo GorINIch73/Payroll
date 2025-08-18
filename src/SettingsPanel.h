@@ -18,7 +18,6 @@ class SettingsPanel : public Panel {
         void render() override;
         void refresh();
         bool writeToDatabase();
-        bool clearDatabase();
 
     private:
         Database &db;

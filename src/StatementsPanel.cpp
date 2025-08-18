@@ -397,7 +397,7 @@ void StatementsPanel::render() {
 
         // обновить
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
+                              ImVec4(0.2f, 0.7f, 0.9f, 0.6f)); // голубой
         if (ImGui::Button(ICON_FA_REFRESH)) {
 
             writeToDatabase();
@@ -414,7 +414,7 @@ void StatementsPanel::render() {
         ImGui::SameLine();
         // добавление записи
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.2f, 0.7f, 0.2f, 1.0f)); // Зеленый
+                              ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
         if (ImGui::Button(ICON_FA_PLUS)) {
             addRecord();
             refresh();
@@ -430,7 +430,7 @@ void StatementsPanel::render() {
         ImGui::SameLine();
         // удаление
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
+                              ImVec4(0.9f, 0.1f, 0.1f, 0.6f)); // красный
         if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
             if (selectedIndex >= 0)
                 ImGui::OpenPopup("Удаление");
@@ -440,12 +440,12 @@ void StatementsPanel::render() {
         // обработка удаления
         if (ImGui::BeginPopupModal("Удаление", NULL,
                                    ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Внимание!");
+            ImGui::TextColored(ImVec4(1, 1, 1, 0.6f), "Внимание!");
             ImGui::Text("Удаление выбранной записи.");
             ImGui::Separator();
 
             ImGui::PushStyleColor(ImGuiCol_Button,
-                                  ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
+                                  ImVec4(0.8f, 0.1f, 0.1f, 6.0f));
             if (ImGui::Button("Продолжить", ImVec2(120, 40))) {
 
                 // Выполнняем удаление
@@ -467,9 +467,9 @@ void StatementsPanel::render() {
 
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
             ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(1, 1, 0, 1), "Внимание!");
+            ImGui::TextColored(ImVec4(1, 0, 0, 0.9f), "Внимание!");
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(1, 0, 0, 1),
+            ImGui::TextColored(ImVec4(1, 0, 0, 0.6f),
                                "Удаление выбранной записи!");
             // ImGui::BulletText("Удаление выбранного сотрудника");
             ImGui::EndTooltip();
@@ -505,7 +505,7 @@ void StatementsPanel::render() {
         ImGui::SameLine();
         // добавление записи
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.2f, 0.7f, 0.5f, 1.0f)); //
+                              ImVec4(0.2f, 0.7f, 0.5f, 0.6f)); //
         if (ImGui::Button(ICON_FA_LIST)) {
 
             // Добавляем пнель запроса
@@ -567,7 +567,7 @@ void StatementsPanel::render() {
         ImGui::SameLine();
         // открыть панель физлиц
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.2f, 0.5f, 0.2f, 1.0f)); // Зеленый
+                              ImVec4(0.2f, 0.5f, 0.2f, 0.6f)); // Зеленый
         if (ImGui::Button(ICON_FA_GROUP)) {
             auto newPanel = std::make_unique<EmployeesPanel>(db);
             manager_panels.addPanel(std::move(newPanel));
@@ -602,7 +602,7 @@ void StatementsPanel::render() {
                       (currentRecord.rate * currentRecord.hours_worked);
 
         if (rSalary != currentRecord.salary)
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%0.2f",
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 0.6f), "%0.2f",
                                rSalary);
         else
             ImGui::Text("%0.2f", rSalary);
@@ -668,7 +668,7 @@ void StatementsPanel::render() {
 
         // добавление записи
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.2f, 0.7f, 0.2f, 1.0f)); // Зеленый
+                              ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
         if (ImGui::Button(ICON_FA_PLUS)) {
             addAccrualRecord();
             refreshAccruals();
@@ -684,7 +684,7 @@ void StatementsPanel::render() {
         ImGui::SameLine();
         // удаление
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
+                              ImVec4(0.9f, 0.1f, 0.1f, 0.6f)); // красный
         if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
             if (selectedAccrualIndex >= 0)
                 ImGui::OpenPopup("УдалениеНачисления");
@@ -699,7 +699,7 @@ void StatementsPanel::render() {
             ImGui::Separator();
 
             ImGui::PushStyleColor(ImGuiCol_Button,
-                                  ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
+                                  ImVec4(0.8f, 0.1f, 0.1f, 0.6f));
             if (ImGui::Button("Продолжить", ImVec2(120, 40))) {
 
                 // Выполнняем удаление
@@ -721,9 +721,9 @@ void StatementsPanel::render() {
 
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
             ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(1, 1, 0, 1), "Внимание!");
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Внимание!");
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(1, 0, 0, 1),
+            ImGui::TextColored(ImVec4(1, 0, 0, 0.6f),
                                "Удаление выбранного начисления!");
             // ImGui::BulletText("Удаление выбранного сотрудника");
             ImGui::EndTooltip();
@@ -732,7 +732,7 @@ void StatementsPanel::render() {
         // открыть панель начислений
         ImGui::SameLine(0.0f, 40.0f);
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.2f, 0.5f, 0.2f, 1.0f)); // Зеленый
+                              ImVec4(0.2f, 0.5f, 0.2f, 0.6f)); // Зеленый
         if (ImGui::Button(ICON_FA_MONEY)) {
             auto newPanel = std::make_unique<AccrualsPanel>(db);
             manager_panels.addPanel(std::move(newPanel));
@@ -746,7 +746,7 @@ void StatementsPanel::render() {
         // открыть панель приказов
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.2f, 0.5f, 0.2f, 1.0f)); // Зеленый
+                              ImVec4(0.2f, 0.5f, 0.2f, 0.6f)); // Зеленый
         if (ImGui::Button(ICON_FA_ORDER)) {
             auto newPanel = std::make_unique<OrdersPanel>(db);
             manager_panels.addPanel(std::move(newPanel));
@@ -919,7 +919,7 @@ void StatementsPanel::render() {
                 // если процент не равен справочному, то красным
                 ImGui::TableSetColumnIndex(3);
                 if (rPercent != list_accruals[i].percentage)
-                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%2.0f",
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 0.8f), "%2.0f",
                                        rPercent);
                 else
                     ImGui::Text("%2.0f", rPercent);
@@ -1060,7 +1060,8 @@ void StatementsPanel::render() {
             // Собираем всю строку в один текст для фильтрации
             // фильтр медомостей
             std::string row_text;
-            if (statements[i].month>0) row_text += std::string(months[statements[i].month - 1]) + " ";
+            if (statements[i].month > 0)
+                row_text += std::string(months[statements[i].month - 1]) + " ";
             row_text += statements[i].employee + " ";
             row_text += std::to_string(statements[i].salary) + " ";
             row_text += statements[i].note;

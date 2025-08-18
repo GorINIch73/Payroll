@@ -61,15 +61,6 @@ GUI::GUI(GLFWwindow *w)
     io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
                                  icons_ranges);
 
-    // настройка внешнего вида панели файлового диалога - иконки для файлов и
-    // каталогов
-    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".db",
-                                              ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
-                                              ICON_FA_DATA_BASE);
-    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "",
-                                              ImVec4(0.0f, 1.0f, 1.0f, 0.9f),
-                                              ICON_FA_FOLDER); // Папки
-
     // загружаем данные из конфига
     settings.Load();
     g_MessageLog.Add("Добро пожаловать.");
@@ -222,26 +213,26 @@ void GUI::showMainMenu() {
 
         if (ImGui::BeginMenu("Файл")) {
 
-            if (ImGui::MenuItem("Открыть базу")) {
+            if (ImGui::MenuItem(ICON_FA_DATA_BASE " Открыть базу")) {
                 showFileDialogOpen = true;
                 // используем ImGuiFileDialog
             }
-            if (ImGui::MenuItem("Сохранить как")) {
+            if (ImGui::MenuItem(ICON_FA_SAVE " Сохранить как")) {
                 if (db.IsOpen())
                     // закрыть все окна ХЗ
                     showFileDialogSaveAs = true;
                 else
                     g_MessageLog.Add("Нечего сохранять. База не открыта!",
-                                     ImVec4(0.6, 0.3, 0.3, 1));
+                                     ImVec4(0.6, 0.3, 0.3, 0.6f));
             }
-            if (ImGui::MenuItem("Закрыть базу")) {
+            if (ImGui::MenuItem(ICON_FA_BAN " Закрыть базу")) {
                 // перед закрытием комитнуть изменения, закрыть все окна
                 manager_panels.removeAllPanels();
                 db.Close();
                 g_MessageLog.Add("База закрыта.");
             }
 
-            if (ImGui::MenuItem("Создать новую базу")) {
+            if (ImGui::MenuItem(ICON_FA_NEW " Создать новую базу")) {
                 /* Создать новую БД */
                 // не сделано - запросить новое имя
                 showFileDialogNew = true;
@@ -285,7 +276,7 @@ void GUI::showMainMenu() {
                 ImGui::EndMenu();
             }
 
-            if (ImGui::MenuItem("Выход")) {
+            if (ImGui::MenuItem(ICON_FA_OFF " Выход")) {
                 /* Закрыть приложение */
                 glfwSetWindowShouldClose(window, true);
             }
@@ -318,22 +309,22 @@ void GUI::showMainMenu() {
         }
 
         if (ImGui::BeginMenu("Отчеты")) {
-            if (ImGui::MenuItem("Список сотрудников")) {
+            if (ImGui::MenuItem(ICON_FA_PRINT " Список сотрудников")) {
                 PdfReportListEmployees();
             }
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Разное")) {
-            if (ImGui::MenuItem("Настройки")) {
+            if (ImGui::MenuItem(ICON_FA_CONF "Настройки")) {
                 addSettingsPanel();
             }
-            if (ImGui::MenuItem("Очистка базы")) {
+            if (ImGui::MenuItem(ICON_FA_ERASER " Очистка базы")) {
                 showClearDB = true;
             }
 
             ImGui::Separator();
-            if (ImGui::MenuItem(settings.darkTheme ? "Light Theme"
-                                                   : "Dark Theme")) {
+            if (ImGui::MenuItem(settings.darkTheme ? "> Light Theme"
+                                                   : "> Dark Theme")) {
                 settings.ToggleTheme();
             }
             ImGui::Separator();
@@ -353,10 +344,25 @@ void GUI::ShowFileDialogOpen() {
     if (!showFileDialogOpen)
         return;
 
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 currentTextColor =
+        style.Colors[ImGuiCol_Text]; // Текущий цвет текста
+    // настройка внешнего вида панели файлового диалога - иконки для файлов и
+    // каталогов
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".db",
+                                              ImVec4(0.0f, 0.8f, 0.6f, 0.9f),
+                                              ICON_FA_DATA_BASE);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "",
+                                              currentTextColor,
+                                              ICON_FA_FOLDER); // Папки
+
     IGFD::FileDialogConfig config;
     config.path = ".";
     config.filePathName = "";                  // Начальное имя файла
     config.flags = ImGuiFileDialogFlags_Modal; // Делаем диалог модальным
+
+    // Обновляем стиль перед открытием
+    // ImGuiFileDialog::Instance()->SetStyle(ImGui::GetStyle());
 
     ImGuiFileDialog::Instance()->OpenDialog(
         "ChooseFileDlgOpen",  // Уникальный ID
@@ -411,6 +417,18 @@ void GUI::ShowFileDialogOpen() {
 void GUI::ShowFileDialogNew() {
     if (!showFileDialogNew)
         return;
+
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 currentTextColor =
+        style.Colors[ImGuiCol_Text]; // Текущий цвет текста
+    // настройка внешнего вида панели файлового диалога - иконки для файлов и
+    // каталогов
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".db",
+                                              ImVec4(0.0f, 0.8f, 0.6f, 0.9f),
+                                              ICON_FA_DATA_BASE);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "",
+                                              currentTextColor,
+                                              ICON_FA_FOLDER); // Папки
 
     IGFD::FileDialogConfig config;
     config.path = ".";
@@ -475,6 +493,18 @@ void GUI::ShowFileDialogNew() {
 void GUI::ShowFileDialogSaveAs() {
     if (!showFileDialogSaveAs)
         return;
+
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 currentTextColor =
+        style.Colors[ImGuiCol_Text]; // Текущий цвет текста
+    // настройка внешнего вида панели файлового диалога - иконки для файлов и
+    // каталогов
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".db",
+                                              ImVec4(0.0f, 0.8f, 0.6f, 0.9f),
+                                              ICON_FA_DATA_BASE);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "",
+                                              currentTextColor,
+                                              ICON_FA_FOLDER); // Папки
 
     IGFD::FileDialogConfig config;
     config.path = ".";

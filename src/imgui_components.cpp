@@ -1,74 +1,78 @@
 #include "imgui_components.h"
 #include <algorithm>
-#include <imgui.h>
-#include <string>
-#include <vector>
 #include <array>
-#include <iostream>
 #include <cstdio>
+#include <imgui.h>
+#include <iostream>
+#include <string>
 #include <unicode/utf8.h>
+#include <vector>
 
 // лог сообытий
-void MessageLog::Add(const std::string& msg, ImVec4 color) {
+void MessageLog::Add(const std::string &msg, ImVec4 color) {
     messages.emplace_back(msg, color);
-    auto_scroll=true;
-    if (messages.size() > 100) messages.erase(messages.begin());
+    auto_scroll = true;
+    if (messages.size() > 100)
+        messages.erase(messages.begin());
 }
+// с цветом по умолчанию
+void MessageLog::Add(const std::string &msg) {
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 defaultTextColor =
+        style.Colors[ImGuiCol_Text]; // Цвет текста по умолчанию
+    Add(msg, defaultTextColor);
+}
+// рисуем статусбар
 void MessageLog::Draw() {
-    
+
     // Стиль без заголовка и с плоскими границами
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    
-    
-        // Отображаем сообщения
-    ImGui::BeginChild("##sbar", ImVec2(0, height), false, 
-            ImGuiWindowFlags_HorizontalScrollbar);
-    {    
-        for (const auto& [msg, color] : messages) {
+
+    // Отображаем сообщения
+    ImGui::BeginChild("##sbar", ImVec2(0, height), false,
+                      ImGuiWindowFlags_HorizontalScrollbar);
+    {
+        for (const auto &[msg, color] : messages) {
             ImGui::TextColored(color, "%s", msg.c_str());
         }
-        
+
         // Автоматическая прокрутка вниз
-        if (auto_scroll){
+        if (auto_scroll) {
 
             ImGui::SetScrollHereY(1.0f);
-            auto_scroll=false;
+            auto_scroll = false;
         }
-        
+
         ImGui::EndChild();
-        
     }
     ImGui::PopStyleVar(2);
-
 }
 
-
-
-//модальное сообщение об ошибке
-void ShowErrorModal(const std::string title, std::string message, bool* p_open)
-{
+// модальное сообщение об ошибке
+void ShowErrorModal(const std::string title, std::string message,
+                    bool *p_open) {
     if (!ImGui::IsPopupOpen(title.c_str()))
         ImGui::OpenPopup(title.c_str());
 
     ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
-    if (ImGui::BeginPopupModal(title.c_str(), p_open, ImGuiWindowFlags_AlwaysAutoResize))
-    {
+    if (ImGui::BeginPopupModal(title.c_str(), p_open,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
         // Иконка через текст (можно заменить на свою текстуру)
-        ImGui::TextColored(ImVec4(1,0.2,0.2,1), "⚠");
+        ImGui::TextColored(ImVec4(1, 0.2, 0.2, 1), "⚠");
         ImGui::SameLine();
-        
+
         // Сообщение с переносами
         ImGui::TextWrapped("%s", message.c_str());
-        
+
         // Центрированная кнопка
         ImGui::SetCursorPosX((ImGui::GetWindowSize().x - 120) * 0.5f);
-        if (ImGui::Button("Закрыть", ImVec2(120, 0)))
-        {
+        if (ImGui::Button("Закрыть", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            if (p_open) *p_open = false;
+            if (p_open)
+                *p_open = false;
         }
-        
+
         ImGui::EndPopup();
     }
     ImGui::PopStyleColor();
@@ -94,7 +98,7 @@ bool ToggleButton(const char *label, bool &v) {
 
     float t = v ? 1.0f : 0.0f;
     ImU32 col_bg = ImGui::GetColorU32(v ? ImVec4(0.23f, 0.73f, 0.23f, 1.0f)
-                                         : ImVec4(0.73f, 0.23f, 0.23f, 1.0f));
+                                        : ImVec4(0.73f, 0.23f, 0.23f, 1.0f));
 
     draw_list->AddRectFilled(p, ImVec2(p.x + width, p.y + height), col_bg,
                              height * 0.5f);
@@ -297,18 +301,16 @@ bool ComboWithFilter(const char *label, int &current_id,
     return changed;
 }
 
-
-
 // Виджет для ввода даты с автоформатированием
-bool InputDate(const char* label, std::string &date) {
- 
+bool InputDate(const char *label, std::string &date) {
+
     bool changed = false;
     const std::string pattern = "YYYY.MM.DD";
     constexpr size_t buf_size = 11; // "YYYY.MM.DD" + null terminator
 
     ImGui::TextUnformatted(label);
     ImGui::SameLine();
-    
+
     // 1. Проверяем текущее значение на соответствие шаблону
     if (date.empty()) {
         date = "____.__.__";
@@ -317,14 +319,14 @@ bool InputDate(const char* label, std::string &date) {
     // 2. Подготавливаем буфер для ImGui
     char buf[buf_size];
     strncpy(buf, date.c_str(), buf_size);
-    buf[buf_size-1] = '\0';
+    buf[buf_size - 1] = '\0';
 
     // 3. Отображаем поле ввода
     ImGui::PushID(label);
     ImGui::PushItemWidth(ImGui::CalcTextSize(std::string(pattern).c_str()).x);
     if (ImGui::InputText("", buf, buf_size, ImGuiInputTextFlags_CharsDecimal)) {
         std::string new_date = buf;
-        
+
         // 4. Фильтруем ввод - оставляем только цифры и точки
         std::string filtered;
         for (char c : new_date) {
@@ -336,13 +338,13 @@ bool InputDate(const char* label, std::string &date) {
         // 5. Восстанавливаем шаблон
         std::string formatted = pattern;
         size_t digit_pos = 0;
-        
+
         // Заполняем цифрами
-        for (size_t i = 0; i < filtered.size() && digit_pos < pattern.size(); ++i) {
+        for (size_t i = 0; i < filtered.size() && digit_pos < pattern.size();
+             ++i) {
             if (isdigit(filtered[i])) {
-                while (digit_pos < pattern.size() && 
-                       pattern[digit_pos] != 'Y' && 
-                       pattern[digit_pos] != 'M' && 
+                while (digit_pos < pattern.size() &&
+                       pattern[digit_pos] != 'Y' && pattern[digit_pos] != 'M' &&
                        pattern[digit_pos] != 'D') {
                     digit_pos++;
                 }
@@ -356,46 +358,46 @@ bool InputDate(const char* label, std::string &date) {
         // Год (1900-2100):
         if (formatted[0] != '_') {
             int year = std::clamp(
-                (formatted[0]-'0')*1000 + 
-                (formatted[1]-'0')*100 + 
-                (formatted[2]-'0')*10 + 
-                (formatted[3]-'0'), 
-                1900, 2100
-            );
+                (formatted[0] - '0') * 1000 + (formatted[1] - '0') * 100 +
+                    (formatted[2] - '0') * 10 + (formatted[3] - '0'),
+                1900, 2100);
             formatted.replace(0, 4, std::to_string(year));
         }
 
         // Месяц (1-12)
         if (formatted[5] != '_') {
             int month = std::clamp(
-                (formatted[5]-'0')*10 + 
-                (formatted[6]-'0'), 
-                1, 12
-            );
-            formatted.replace(5, 2, month < 10 ? "0" + std::to_string(month) : std::to_string(month));
+                (formatted[5] - '0') * 10 + (formatted[6] - '0'), 1, 12);
+            formatted.replace(5, 2,
+                              month < 10 ? "0" + std::to_string(month)
+                                         : std::to_string(month));
         }
 
         // День (1-31 с учетом месяца)
         if (formatted[8] != '_') {
-            int day = (formatted[8]-'0')*10 + (formatted[9]-'0');
+            int day = (formatted[8] - '0') * 10 + (formatted[9] - '0');
             int max_day = 31;
-            
+
             if (formatted[5] != '_') {
-                int month = (formatted[5]-'0')*10 + (formatted[6]-'0');
+                int month = (formatted[5] - '0') * 10 + (formatted[6] - '0');
                 if (month == 2) {
                     max_day = 28; // без учета високосных
-                } else if (month == 4 || month == 6 || month == 9 || month == 11) {
+                } else if (month == 4 || month == 6 || month == 9 ||
+                           month == 11) {
                     max_day = 30;
                 }
             }
-            
+
             day = std::clamp(day, 1, max_day);
-            formatted.replace(8, 2, day < 10 ? "0" + std::to_string(day) : std::to_string(day));
+            formatted.replace(8, 2,
+                              day < 10 ? "0" + std::to_string(day)
+                                       : std::to_string(day));
         }
 
         // 7. Заменяем незаполненные позиции
         for (size_t i = 0; i < formatted.size(); ++i) {
-            if (formatted[i] == 'Y' || formatted[i] == 'M' || formatted[i] == 'D') {
+            if (formatted[i] == 'Y' || formatted[i] == 'M' ||
+                formatted[i] == 'D') {
                 formatted[i] = '_';
             }
         }
@@ -413,12 +415,6 @@ bool InputDate(const char* label, std::string &date) {
         ImGui::SetTooltip("Формат: YYYY.MM.DD");
     }
     ImGui::PopID();
-    
-
 
     return changed;
 }
-
-
-
-

@@ -9,15 +9,19 @@
 #define ICON_FA_TRASH u8"\uf1f8"  // Значок корзины
 #define ICON_FA_PLUS u8"\uf055"   // плюс в круге
 #define ICON_FA_FOLDER u8"\uf07b" // Папка
-#define ICON_FA_COG u8"\uf013"    // Шестеренка
+#define ICON_FA_CONF u8"\uf013"   // Шестеренка
 #define ICON_FA_BARS u8"\uf0c9"   // Меню
 #define ICON_FA_TIMES u8"\uf00d"  // Крестик
-#define ICON_FA_PRINT u8"\uf0f2"  // принтер
+#define ICON_FA_PRINT u8"\uf02f"  // принтер
 #define ICON_FA_USER u8"\uf007"   // человек
-#define ICON_FA_GROUP u8"\uf0C0"  // группа людей
+#define ICON_FA_NEW u8"\uf016"    // чистый лист
+#define ICON_FA_OFF u8"\uf011"    // выключение
+#define ICON_FA_BAN u8"\uf05e"    // перечеркнутый круг
+#define ICON_FA_UPLOAD u8"\uf093" // выгрузка
+#define ICON_FA_COPY u8"\uf0c5"   // копировать
 
-#define ICON_FA_OFF u8"\uf011"       // выключение
 #define ICON_FA_REFRESH u8"\uf021"   // обновить
+#define ICON_FA_GROUP u8"\uf0C0"     // группа людей
 #define ICON_FA_RUB u8"\uf158"       // знак рубля
 #define ICON_FA_CARD u8"\uf1ea"      // карточка
 #define ICON_FA_CARD_USER u8"\uf2c3" // личная карточка
@@ -28,12 +32,12 @@
 #define ICON_FA_CHART u8"\uf080"     // график
 #define ICON_FA_LIST u8"\uf03a"      // список
 #define ICON_FA_LIST_ALT u8"\uf298"  // список в рамке
-#define ICON_FA_DATA_BASE u8"\uf1c0"  // база данных
-#define ICON_FA_ERASER u8"\uf12d"  // стерка
-#define ICON_FA_USER_MD u8"\uf0f0"  // медик
-#define ICON_FA_DIVISIONS u8"\uf0e8"  // блок схема
-#define ICON_FA_MONEY u8"\uf0d6"  // купюра
-#define ICON_FA_ORDER u8"\uf0e3"  // приказ - колотушка
+#define ICON_FA_DATA_BASE u8"\uf1c0" // база данных
+#define ICON_FA_ERASER u8"\uf12d"    // стерка
+#define ICON_FA_USER_MD u8"\uf0f0"   // медик
+#define ICON_FA_DIVISIONS u8"\uf0e8" // блок схема
+#define ICON_FA_MONEY u8"\uf0d6"     // купюра
+#define ICON_FA_ORDER u8"\uf0e3"     // приказ - колотушка
 
 // Диапазон иконок для ImGui
 // static const ImWchar icons_ranges[] = {

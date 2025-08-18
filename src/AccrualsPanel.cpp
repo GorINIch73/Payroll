@@ -138,7 +138,7 @@ void AccrualsPanel::render() {
 
     // обновить
     ImGui::PushStyleColor(ImGuiCol_Button,
-                          ImVec4(0.2f, 0.7f, 0.9f, 1.0f)); // голубой
+                          ImVec4(0.2f, 0.7f, 0.9f, 0.6f)); // голубой
     if (ImGui::Button(ICON_FA_REFRESH)) {
         writeToDatabase();
         refresh();
@@ -152,7 +152,7 @@ void AccrualsPanel::render() {
     ImGui::SameLine();
     // добавление записи
     ImGui::PushStyleColor(ImGuiCol_Button,
-                          ImVec4(0.2f, 0.7f, 0.2f, 1.0f)); // Зеленый
+                          ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
     if (ImGui::Button(ICON_FA_PLUS)) {
         addRecord();
         refresh();
@@ -168,7 +168,7 @@ void AccrualsPanel::render() {
     ImGui::SameLine();
     // удаление
     ImGui::PushStyleColor(ImGuiCol_Button,
-                          ImVec4(0.9f, 0.1f, 0.1f, 1.0f)); // красный
+                          ImVec4(0.9f, 0.1f, 0.1f, 0.6f)); // красный
     if (ImGui::Button(ICON_FA_TRASH)) {                    /* ... */
 
         if (selectedIndex >= 0)
@@ -205,9 +205,9 @@ void AccrualsPanel::render() {
 
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
         ImGui::BeginTooltip();
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), "Внимание!");
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Внимание!");
         ImGui::Separator();
-        ImGui::TextColored(ImVec4(1, 0, 0, 1),
+        ImGui::TextColored(ImVec4(1, 0, 0, 0.6f),
                            "Удаление выбранного начисления!");
         // ImGui::BulletText("Удаление выбранного сотрудника");
         ImGui::EndTooltip();
@@ -216,7 +216,7 @@ void AccrualsPanel::render() {
     // Отчет по запросу
     ImGui::SameLine();
     // добавление записи
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.5f, 1.0f)); //
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.5f, 0.6f)); //
     if (ImGui::Button(ICON_FA_LIST)) {
 
         // Добавляем пнель запроса

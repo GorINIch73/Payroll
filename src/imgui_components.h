@@ -7,21 +7,22 @@
 
 // отображение лога событий
 struct MessageLog {
-    std::vector<std::pair<std::string, ImVec4>> messages;
-    bool auto_scroll = true;
-    float height = 22.0f; // Высота панели сообщений
-    // float width = 200.f; // ширина поля
-    
-    void Add(const std::string& msg, ImVec4 color = ImVec4(1, 1, 1, 1));
-    void Draw();
+        std::vector<std::pair<std::string, ImVec4>> messages;
+        bool auto_scroll = true;
+        float height = 22.0f; // Высота панели сообщений
+        // float width = 200.f; // ширина поля
+
+        void Add(const std::string &msg, ImVec4 color);
+        void Add(const std::string &msg);
+        void Draw();
 };
 
 // Глобальный экземпляр лога
 inline MessageLog g_MessageLog;
 
-
-//модальное сообщение об ошибке
-void ShowErrorModal(const std::string title, std::string message, bool* p_open = NULL);
+// модальное сообщение об ошибке
+void ShowErrorModal(const std::string title, std::string message,
+                    bool *p_open = NULL);
 
 // вспомогательная структура для комбобокса
 struct ComboItem {
@@ -39,4 +40,4 @@ bool InputTextWrapper(const char *label, std::string &text, float width);
 bool ToggleButton(const char *label, bool &v);
 
 // Функция для рендеринга поля с автоматическими переходами
-bool InputDate(const char* label, std::string &date);
+bool InputDate(const char *label, std::string &date);
