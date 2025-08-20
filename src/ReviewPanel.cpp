@@ -49,6 +49,14 @@ void ReviewPanel::refresh() {
     }
 
     int columnCount = sqlite3_column_count(stmt);
+
+    // Извлекаем имена столбцов для заголовков таблицы
+    headers.clear();
+    for (int i = 0; i < columnCount; i++) {
+        headers.push_back(sqlite3_column_name(stmt, i));
+    }
+
+    // данный
     data.clear();
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -289,9 +297,18 @@ void ReviewPanel::render() {
                               ImGuiTableFlags_ScrollY)) {
 
         // Заголовки столбцов + фильтры
+        // for (size_t col = 0; col < data[0].columns.size(); ++col) {
+        //     ImGui::TableSetupColumn(std::to_string(col).c_str());
+        // }
+
         for (size_t col = 0; col < data[0].columns.size(); ++col) {
-            ImGui::TableSetupColumn(std::to_string(col).c_str());
+            ImGui::TableSetupColumn(headers[col].c_str());
         }
+        // Устанавливаем заголовки
+        // for (const auto& header : headers) {
+        //     ImGui::TableSetupColumn(header.c_str());
+        // }
+
         ImGui::TableHeadersRow();
 
         // Фильтры для каждого столбца

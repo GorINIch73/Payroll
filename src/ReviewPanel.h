@@ -30,10 +30,10 @@ class ReviewPanel : public Panel {
         Database &db;
 
         std::vector<TableRow> data;
+        std::vector<std::string> headers;
 
         std::string query;
         // std::vector<std::vector<std::string>> rows;
-        // std::vector<std::string> headers;
         std::vector<bool> column_filter_enabled;
         std::vector<std::string> column_filters;
         ImGuiTextFilter global_filter;

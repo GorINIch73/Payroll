@@ -6,6 +6,12 @@
 #include <string>
 #include <vector>
 
+// поле ввода дабл с возможностью расчета
+bool InputDoubleWithCalculation(const char *label, double *value,
+                                const char *format = "%.6f",
+                                ImGuiInputTextFlags flags = 0);
+static double EvaluateSimpleExpression(const std::string &expression);
+
 // поиск шрифтов
 std::filesystem::path find_font(const std::string &fontName);
 

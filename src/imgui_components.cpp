@@ -9,6 +9,165 @@
 #include <unicode/utf8.h>
 #include <vector>
 
+#include <cmath>
+#include <functional>
+#include <map>
+#include <regex>
+#include <sstream>
+#include <stack>
+
+#include <algorithm>
+#include <cmath>
+#include <functional>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
+
+// Функция для вычисления простых выражений
+static double EvaluateSimpleExpression(const std::string &expression) {
+    if (expression.empty())
+        return 0.0;
+
+    std::vector<std::string> tokens;
+    std::string current_token;
+
+    // Разбиваем на токены
+    for (char c : expression) {
+        if (c == ' ')
+            continue;
+
+        if (c == '+' || c == '-' || c == '*' || c == '/') {
+            if (!current_token.empty()) {
+                tokens.push_back(current_token);
+                current_token.clear();
+            }
+            tokens.push_back(std::string(1, c));
+        } else {
+            current_token += c;
+        }
+    }
+
+    if (!current_token.empty()) {
+        tokens.push_back(current_token);
+    }
+
+    if (tokens.empty())
+        return 0.0;
+
+    // Сначала обрабатываем умножение и деление
+    std::vector<double> values;
+    std::vector<char> operations;
+
+    try {
+        values.push_back(std::stod(tokens[0]));
+
+        for (size_t i = 1; i < tokens.size(); i += 2) {
+            if (i + 1 >= tokens.size())
+                break;
+
+            char op = tokens[i][0];
+            double num = std::stod(tokens[i + 1]);
+
+            if (op == '*' || op == '/') {
+                double &last = values.back();
+                if (op == '*')
+                    last *= num;
+                else if (op == '/') {
+                    if (num == 0.0)
+                        throw std::runtime_error("Division by zero");
+                    last /= num;
+                }
+            } else {
+                operations.push_back(op);
+                values.push_back(num);
+            }
+        }
+
+        // Затем обрабатываем сложение и вычитание
+        double result = values[0];
+        for (size_t i = 0; i < operations.size(); i++) {
+            if (operations[i] == '+')
+                result += values[i + 1];
+            else if (operations[i] == '-')
+                result -= values[i + 1];
+        }
+
+        return result;
+    } catch (const std::exception &) {
+        throw std::runtime_error("Invalid expression");
+    }
+}
+
+bool InputDoubleWithCalculation(const char *label, double *value,
+                                const char *format, ImGuiInputTextFlags flags) {
+    // Статические переменные для хранения состояния
+    static std::string input_buffer;
+    static bool is_active = false;
+    static const char *current_label = nullptr;
+    static bool needs_focus = false;
+
+    bool changed = false;
+    bool is_item_active = false;
+
+    // Создаем временный буфер для ImGui::InputText
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), format, *value);
+
+    // Используем InputText вместо InputDouble для большего контроля
+    if (ImGui::InputText(label, buffer, sizeof(buffer),
+                         flags | ImGuiInputTextFlags_EnterReturnsTrue)) {
+        // Если нажат Enter, пытаемся вычислить выражение
+        std::string input_str = buffer;
+        if (!input_str.empty() && input_str[0] == '=') {
+            try {
+                std::string expression = input_str.substr(1);
+                *value = EvaluateSimpleExpression(expression);
+                changed = true;
+            } catch (const std::exception &e) {
+                // Можно показать сообщение об ошибке
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error: %s", e.what());
+            }
+        } else {
+            // Обычный ввод числа
+            try {
+                *value = std::stod(input_str);
+                changed = true;
+            } catch (...) {
+                // Невалидный ввод
+            }
+        }
+    }
+
+    is_item_active = ImGui::IsItemActive();
+
+    // Автоматическое вычисление при вводе '=' и пробела
+    if (is_item_active) {
+        std::string current_text = buffer;
+        if (current_text.find('=') != std::string::npos) {
+            size_t equals_pos = current_text.find('=');
+            if (equals_pos != std::string::npos) {
+                std::string expression = current_text.substr(equals_pos + 1);
+                // Удаляем пробелы в конце для избежания преждевременного
+                // вычисления
+                if (!expression.empty() && expression.back() != ' ') {
+                    try {
+                        double result = EvaluateSimpleExpression(expression);
+                        // Обновляем значение, но не буфер, чтобы не мешать
+                        // вводу
+                        *value = result;
+                        changed = true;
+                    } catch (...) {
+                        // Игнорируем ошибки во время ввода
+                    }
+                }
+            }
+        }
+    }
+
+    return changed;
+}
+
 namespace fs = std::filesystem;
 fs::path find_font(const std::string &fontName) {
     // 1. Проверяем путь рядом с исполняемым файлом (для разработки)

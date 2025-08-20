@@ -623,12 +623,19 @@ void StatementsPanel::render() {
 
         ImGui::Text("Норма часов:");
         ImGui::SameLine();
-        ImGui::InputDouble("##норма", &currentRecord.hours_norm, 0, 0, "%0.2f");
+        // ImGui::InputDouble("##норма", &currentRecord.hours_norm, 0, 0,
+        // "%0.2f");
+        if (InputDoubleWithCalculation("##норма", &currentRecord.hours_norm,
+                                       "%0.2f")) {
+            // Значение изменилось
+        }
 
         ImGui::Text("Отработано часов:");
         ImGui::SameLine();
-        ImGui::InputDouble("##часы", &currentRecord.hours_worked, 0, 0,
-                           "%0.2f");
+        // ImGui::InputDouble("##часы", &currentRecord.hours_worked, 0, 0,
+        //                    "%0.2f");
+        InputDoubleWithCalculation("##часы", &currentRecord.hours_worked,
+                                   "%0.2f");
 
         ToggleButton("Табель проверен:", currentRecord.timesheet_verified);
 
@@ -893,8 +900,11 @@ void StatementsPanel::render() {
                 // прижимае к правой тороне
                 if (selectedAccrualIndex == i) {
                     ImGui::SetNextItemWidth(ImGui::GetColumnWidth());
-                    ImGui::InputDouble("##сумма", &currentAccrualRecord.amount,
-                                       0, 0, "%.2f");
+                    // ImGui::InputDouble("##сумма",
+                    // &currentAccrualRecord.amount,
+                    //                    0, 0, "%.2f");
+                    InputDoubleWithCalculation(
+                        "##часы", &currentAccrualRecord.amount, "%0.2f");
                 } else {
 
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,

@@ -1,5 +1,6 @@
 #include "PdfExporter.h"
 #include "Database.h"
+#include "imgui_components.h"
 #include <cstddef>
 #include <hpdf.h>
 #include <hpdf_font.h>
@@ -54,7 +55,9 @@ void PdfExporter::GeneratePDFListEmployees(const char *filename) {
     // поддержка кирилицы
     HPDF_UseUTFEncodings(pdf); // Включить UTF-8
     HPDF_Font font = HPDF_GetFont(
-        pdf, HPDF_LoadTTFontFromFile(pdf, "NotoSans-Regular.ttf", HPDF_TRUE),
+        pdf,
+        HPDF_LoadTTFontFromFile(
+            pdf, find_font("NotoSans-Regular.ttf").string().c_str(), HPDF_TRUE),
         "UTF-8");
 
     if (!font) {
