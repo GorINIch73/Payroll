@@ -9,6 +9,7 @@
 #include "OrdersPanel.h"
 #include "Panel.h"
 #include "PositionsPanel.h"
+#include "Settings.h"
 #include "SettingsPanel.h"
 #include "StatementsPanel.h"
 
@@ -16,6 +17,7 @@
 #include "PdfExporter.h"
 #include "imgui_components.h"
 
+#include <charconv>
 #include <iostream>
 
 #include <GLFW/glfw3.h>
@@ -24,6 +26,7 @@
 #include <imgui_impl_opengl3.h>
 #include <memory>
 // #include <strstream>
+#include <string>
 #include <utility>
 
 // #include <imgui_internal.h>
@@ -35,24 +38,25 @@ GUI::GUI(GLFWwindow *w)
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    // грузим русский шрифт
-    ImFont *font = io.Fonts->AddFontFromFileTTF(
-        find_font("NotoSans-Regular.ttf").string().c_str(), 24.0f, nullptr,
-        io.Fonts->GetGlyphRangesCyrillic());
-
-    // Добавляем иконки
-    ImFontConfig config;
-    // Добавляем Font Awesome
-    config.MergeMode = true;
-    config.PixelSnapH = true;
-
-    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-    io.Fonts->AddFontFromFileTTF(
-        find_font("fontawesome-webfont.ttf").string().c_str(), 24.0f, &config,
-        icons_ranges);
+    // // грузим русский шрифт
+    // ImFont *font = io.Fonts->AddFontFromFileTTF(
+    //     find_font("NotoSans-Regular.ttf").string().c_str(), 24.0f, nullptr,
+    //     io.Fonts->GetGlyphRangesCyrillic());
+    //
+    // // Добавляем иконки
+    // ImFontConfig config;
+    // // Добавляем Font Awesome
+    // config.MergeMode = true;
+    // config.PixelSnapH = true;
+    //
+    // static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    // io.Fonts->AddFontFromFileTTF(
+    //     find_font("fontawesome-webfont.ttf").string().c_str(), 24.0f,
+    //     &config, icons_ranges);
 
     // загружаем данные из конфига
-    settings.Load();
+    // settings.Load();
+    // settings.LoadFonts();
     g_MessageLog.Add("Добро пожаловать.");
     // g_MessageLog.Add(find_font("NotoSans-Regular.ttf").string());
     // g_MessageLog.Add(find_font("fontawesome-webfont.ttf").string());
@@ -60,6 +64,7 @@ GUI::GUI(GLFWwindow *w)
 
 void GUI::render() {
 
+    // settings.LoadFonts();
     // Получаем размер окна
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -321,6 +326,47 @@ void GUI::showMainMenu() {
                                                    : "> Dark Theme")) {
                 settings.ToggleTheme();
             }
+
+            if (ImGui::BeginMenu("Размер шрифта")) {
+
+                // Слайдер с меткой и форматированием
+                // ImGui::Text("Adjust font size:");
+                // ImGui::SetNextItemWidth(250.0f);
+                // static int current_index = settings.sizeFont;
+                static int current_index = 0;
+
+                const float values[] = {12.0f, 14.0f, 16.0f, 18.0f,
+                                        20.0f, 22.0f, 24.0f, 26.0f,
+                                        28.f,  30.f,  32.0f};
+                const int value_count = IM_ARRAYSIZE(values);
+                const char *labels[] = {"12", "14", "16", "18", "20", "22",
+                                        "24", "26", "28", "30", "32"};
+                // ищем индекс
+                for (int i = 0; i < IM_ARRAYSIZE(values); i++)
+                    if (values[i] == settings.sizeFont) {
+                        current_index = i;
+                        break;
+                    }
+
+                // ImGui::Text("Scale Factor:");
+                ImGui::SetNextItemWidth(200);
+                if (ImGui::SliderInt("##scale", &current_index, 0,
+                                     value_count - 1, labels[current_index])) {
+                    settings.sizeFont = values[current_index];
+                    settings.needLoadFonts = true;
+                    settings.Save();
+                    // просто извещаем о необходимой перегрузке - динамически не
+                    // вышло
+                    g_MessageLog.Add("Изменен размер шрифта: " +
+                                     std::to_string(settings.sizeFont) +
+                                     " Перегрузите приложение!");
+                }
+
+                ImGui::EndMenu();
+            }
+
+            // Визуальные подсказки на слайдере
+            // ImGui::TextDisabled("← Smaller | Larger →");
             ImGui::Separator();
 
             if (ImGui::MenuItem("О программе")) { /*showAbout(); */

@@ -3,6 +3,7 @@
 #include "EmployeesPanel.h"
 #include "GUI.h"
 #include "Panel.h"
+#include "Settings.h"
 
 #include <GLFW/glfw3.h>
 // #include <fontconfig/fontconfig.h> // Добавьте этот заголовочный файл
@@ -63,13 +64,17 @@ int main() {
     //
     // Основной GUI
     GUI gui(window);
-
+    settings.Load();
     // Главный цикл
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
+        if (settings.needLoadFonts)
+            settings.LoadFonts();
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+
         ImGui::NewFrame();
         // ImGui::SetNextWindowPos(ImVec2(0, 0));
         // ImGui::SetNextWindowSize(io.DisplaySize);

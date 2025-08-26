@@ -13,6 +13,7 @@ class Settings {
         void AddToHistory(const std::string &filepath);
         void ToggleTheme();
         void getDataFromDB(Database &db);
+        void LoadFonts(float size = 0.0f);
 
         // Конфигурационный файл
         const std::string CONFIG_FILE = ".payroll.config.json";
@@ -21,5 +22,9 @@ class Settings {
         std::vector<std::string> recentFiles;
         ImGuiStyle currentStyle;
         bool darkTheme = true;
+        float sizeFont = 24.0f;
         std::string organization = "";
+        bool needLoadFonts = true;
 };
+
+inline Settings settings;

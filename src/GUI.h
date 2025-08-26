@@ -24,7 +24,7 @@ class GUI {
         Database db;
         // std::vector<std::unique_ptr<Panel>> panels;
 
-        Settings settings;
+        // Settings settings;
         // std::vector<std::string> recentFiles;
         bool showClearDB = false;
         bool showAbout = false;
