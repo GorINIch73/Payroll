@@ -630,12 +630,19 @@ void StatementsPanel::render() {
             // Значение изменилось
         }
 
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(" = +-*/ ");
+        }
         ImGui::Text("Отработано часов:");
         ImGui::SameLine();
         // ImGui::InputDouble("##часы", &currentRecord.hours_worked, 0, 0,
         //                    "%0.2f");
         InputDoubleWithCalculation("##часы", &currentRecord.hours_worked,
                                    "%0.2f");
+
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(" = +-*/ ");
+        }
 
         ToggleButton("Табель проверен:", currentRecord.timesheet_verified);
 
@@ -904,7 +911,10 @@ void StatementsPanel::render() {
                     // &currentAccrualRecord.amount,
                     //                    0, 0, "%.2f");
                     InputDoubleWithCalculation(
-                        "##часы", &currentAccrualRecord.amount, "%0.2f");
+                        "##amount", &currentAccrualRecord.amount, "%0.2f");
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip(" = +-*/ ");
+                    }
                 } else {
 
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,

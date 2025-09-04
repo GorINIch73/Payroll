@@ -115,9 +115,11 @@ bool InputDoubleWithCalculation(const char *label, double *value,
     snprintf(buffer, sizeof(buffer), format, *value);
 
     // Используем InputText вместо InputDouble для большего контроля
-    if (ImGui::InputText(label, buffer, sizeof(buffer),
-                         flags | ImGuiInputTextFlags_EnterReturnsTrue)) {
-        // Если нажат Enter, пытаемся вычислить выражение
+    // Если нажат Enter, пытаемся вычислить выражение
+    // if (ImGui::InputText(label, buffer, sizeof(buffer),
+    //                      flags | ImGuiInputTextFlags_EnterReturnsTrue)) {
+    // расчет без подтверждения
+    if (ImGui::InputText(label, buffer, sizeof(buffer), flags)) {
         std::string input_str = buffer;
         if (!input_str.empty() && input_str[0] == '=') {
             try {
