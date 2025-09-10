@@ -31,44 +31,32 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    // ImGuiIO &io = ImGui::GetIO();
-    // (void)io;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    //
-    // // грузим русский шрифт
-    // ImFont *font =
-    //     io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf", 24.0f, nullptr,
-    //                                  io.Fonts->GetGlyphRangesCyrillic());
-    //
-    // // Добавляем иконки
-    // ImFontConfig config;
-    // // Добавляем Font Awesome
-    // config.MergeMode = true;
-    // config.PixelSnapH = true;
-    //
-    // static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-    // io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 24.0f, &config,
-    //                              icons_ranges);
-    //
-    // // Инициализация базы данных
-    // Database db;
-    // if (!db.open("payroll.db")) {
-    //     std::cerr << "Не удалось открыть БД!" << std::endl;
-    //     return -1;
-    // }
-
-    // if (!db.createNewDatabase()) {
-    //     std::cerr << "Ошибка создания БД!" << std::endl;
-    //     return -1;
-    // }
-    //
     // Основной GUI
     GUI gui(window);
     settings.Load();
     // Главный цикл
+    int display_w, display_h;
     while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
+        // glfwPollEvents();
 
+        // Проверяем состояние окна
+        bool isFocused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
+        bool isMinimized = glfwGetWindowAttrib(window, GLFW_ICONIFIED);
+
+        // Обработка событий в зависимости от состояния
+        if (isMinimized) {
+            glfwWaitEvents(); // Минимальная нагрузка
+            continue;
+        }
+
+        if (!isFocused) {
+            // Фоновый режим - ограничиваем FPS
+            glfwWaitEventsTimeout(0.1); // ~10 FPS
+        } else {
+            glfwWaitEventsTimeout(0.033); // ~30 FPS
+        }
+
+        // если надо грузим шрифт - не работает динамически - хз почему
         if (settings.needLoadFonts)
             settings.LoadFonts();
 
@@ -76,14 +64,8 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
 
         ImGui::NewFrame();
-        // ImGui::SetNextWindowPos(ImVec2(0, 0));
-        // ImGui::SetNextWindowSize(io.DisplaySize);
-        //
 
-        // сотрудники
-
-        // auto newPanel = std::make_unique<EmployeesPanel>(db);
-        // manager_panels.push_back(std::move(newPanel));
+        // рендерим окна
         gui.render();
 
         ImGui::Render();
