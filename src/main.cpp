@@ -35,21 +35,32 @@ int main() {
     //     return -1;
     // }
     // Инициализация GLFW и OpenGL
+    // без этого прыгала и не всегда срабатывала мышь
+    glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
     glfwInit();
     GLFWwindow *window =
         glfwCreateWindow(1280, 720, "Payroll App", nullptr, nullptr);
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // VSync
+    //
 
     // Устанавливаем callback для изменений размеров
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // Инициализация ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-
+    // тайминги для лучшего распознавания кликов
+    io.MouseDoubleClickTime = 0.5f;    // Увеличьте если нужно
+    io.MouseDoubleClickMaxDist = 8.0f; // Немного увеличьте радиус
+    //
+    // Для быстрых кликов важно уменьшить задержку
+    io.ConfigInputTrickleEventQueue = false; // Отключите если включено
+                                             // //
+                                             // // io.MouseDrawCursor = false;
+    // LOG_DEBUG_MSG("Go...");
     // Получаем текущие размеры framebuffer'а для начальной настройки
     int fb_width, fb_height;
     glfwGetFramebufferSize(window, &fb_width, &fb_height);
@@ -71,6 +82,7 @@ int main() {
     // Главный цикл
     int display_w, display_h;
     while (!glfwWindowShouldClose(window)) {
+
         // glfwPollEvents();
         // Проверяем состояние окна
         bool isFocused = glfwGetWindowAttrib(window, GLFW_FOCUSED);
@@ -83,6 +95,7 @@ int main() {
             continue;
         }
 
+        // glfwPollEvents();
         if (!isFocused) {
             // Фоновый режим - ограничиваем FPS
             glfwWaitEventsTimeout(0.1); // ~10 FPS
@@ -121,7 +134,15 @@ int main() {
         //
         // ImGui::NewFrame();
 
+        // ImGui::ShowDemoWindow();
         // рендерим окна
+        //
+
+        // glfwPollEvents();
+
+        // glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
+        // glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
+
         gui.render();
 
         ImGui::Render();

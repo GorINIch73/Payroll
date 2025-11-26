@@ -18,6 +18,7 @@ if (WIN32)
     add_definitions(-DWIN32_LEAN_AND_MEAN)
 endif()
 
+add_definitions(-DGLFW_USE_WAYLAND=1)
 
 # Ищем необходимые библиотеки  
 find_package(OpenGL REQUIRED)  
