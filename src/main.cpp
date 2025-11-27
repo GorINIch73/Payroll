@@ -46,20 +46,20 @@ int main() {
     //
 
     // Устанавливаем callback для изменений размеров
-    // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // Инициализация ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     // тайминги для лучшего распознавания кликов
-    io.MouseDoubleClickTime = 0.5f;    // Увеличьте если нужно
-    io.MouseDoubleClickMaxDist = 8.0f; // Немного увеличьте радиус
+    // io.MouseDoubleClickTime = 0.5f;    // Увеличьте если нужно
+    // io.MouseDoubleClickMaxDist = 8.0f; // Немного увеличьте радиус
     //
     // Для быстрых кликов важно уменьшить задержку
-    io.ConfigInputTrickleEventQueue = false; // Отключите если включено
-                                             // //
-                                             // // io.MouseDrawCursor = false;
+    // io.ConfigInputTrickleEventQueue = false; // Отключите если включено
+    // //
+    // // io.MouseDrawCursor = false;
     // LOG_DEBUG_MSG("Go...");
     // Получаем текущие размеры framebuffer'а для начальной настройки
     int fb_width, fb_height;
