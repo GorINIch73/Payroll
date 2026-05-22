@@ -24,6 +24,61 @@
 
 #include "imgui_components.h"
 
+namespace {
+int compareEmployees(const Employee &left, const Employee &right,
+                     ImGuiID columnId) {
+    switch (columnId) {
+    case 0:
+        return left.id - right.id;
+    case 1:
+        return left.individual.compare(right.individual);
+    case 2:
+        return left.position.compare(right.position);
+    case 3:
+        return (left.salary > right.salary) - (left.salary < right.salary);
+    case 4:
+        return (left.rate > right.rate) - (left.rate < right.rate);
+    case 5:
+        return left.division.compare(right.division);
+    case 6:
+        return left.contract.compare(right.contract);
+    case 7:
+        return static_cast<int>(left.contract_found) -
+               static_cast<int>(right.contract_found);
+    case 8:
+        return static_cast<int>(left.certificate_found) -
+               static_cast<int>(right.certificate_found);
+    case 9:
+        return left.note.compare(right.note);
+    default:
+        return 0;
+    }
+}
+
+void sortEmployees(std::vector<Employee> &employees,
+                   const ImGuiTableSortSpecs *sortSpecs) {
+    if (!sortSpecs || sortSpecs->SpecsCount == 0)
+        return;
+
+    std::stable_sort(
+        employees.begin(), employees.end(),
+        [sortSpecs](const Employee &left, const Employee &right) {
+            for (int i = 0; i < sortSpecs->SpecsCount; ++i) {
+                const ImGuiTableColumnSortSpecs &spec = sortSpecs->Specs[i];
+                int result = compareEmployees(left, right, spec.ColumnUserID);
+                if (result == 0)
+                    continue;
+
+                return spec.SortDirection == ImGuiSortDirection_Ascending
+                           ? result < 0
+                           : result > 0;
+            }
+
+            return left.id < right.id;
+        });
+}
+} // namespace
+
 EmployeesPanel::EmployeesPanel(Database &db)
     : Panel("Справочник работников"),
       db(db) {
@@ -192,33 +247,32 @@ void EmployeesPanel::refresh() {
 
 bool EmployeesPanel::isCurrentChanged() {
 
-    // если индексы не определены
     if (currentRecord.id < 0)
         return false;
-    if (oldIndex < 0)
+
+    int currentIndex = FindIndexById(employees, currentRecord.id);
+    if (currentIndex < 0)
         return false;
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << employees[oldIndex].note << std::endl;
-
     // срапвниваем поля
-    if (currentRecord.individual_id != employees[oldIndex].individual_id)
+    if (currentRecord.individual_id != employees[currentIndex].individual_id)
         return true;
-    if (currentRecord.position_id != employees[oldIndex].position_id)
+    if (currentRecord.position_id != employees[currentIndex].position_id)
         return true;
-    if (currentRecord.rate != employees[oldIndex].rate)
+    if (currentRecord.rate != employees[currentIndex].rate)
         return true;
-    if (currentRecord.division_id != employees[oldIndex].division_id)
+    if (currentRecord.division_id != employees[currentIndex].division_id)
         return true;
-    if (currentRecord.contract != employees[oldIndex].contract)
+    if (currentRecord.contract != employees[currentIndex].contract)
         return true;
-    if (currentRecord.contract_found != employees[oldIndex].contract_found)
+    if (currentRecord.contract_found != employees[currentIndex].contract_found)
         return true;
     if (currentRecord.certificate_found !=
-        employees[oldIndex].certificate_found)
+        employees[currentIndex].certificate_found)
         return true;
-    if (currentRecord.note != employees[oldIndex].note)
+    if (currentRecord.note != employees[currentIndex].note)
         return true;
 
     return false;
@@ -503,34 +557,38 @@ void EmployeesPanel::render() {
     if (ImGui::BeginTable("Employees", 10,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                               ImGuiTableFlags_RowBg |
-                              ImGuiTableFlags_ScrollY)) {
+                              ImGuiTableFlags_ScrollY |
+                              ImGuiTableFlags_Sortable |
+                              ImGuiTableFlags_SortMulti)) {
 
         ImGui::TableSetupColumn("ID",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                50.0f);
-        ImGui::TableSetupColumn("ФИО");
-        ImGui::TableSetupColumn("Должность");
+                                50.0f, 0);
+        ImGui::TableSetupColumn("ФИО", 0, 0.0f, 1);
+        ImGui::TableSetupColumn("Должность", 0, 0.0f, 2);
         ImGui::TableSetupColumn("Оклад",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                150.0f);
+                                150.0f, 3);
         ImGui::TableSetupColumn("Ставка",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                100.0f);
-        ImGui::TableSetupColumn("Отделение");
-        ImGui::TableSetupColumn("Договор");
+                                100.0f, 4);
+        ImGui::TableSetupColumn("Отделение", 0, 0.0f, 5);
+        ImGui::TableSetupColumn("Договор", 0, 0.0f, 6);
         ImGui::TableSetupColumn("дог+",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                10.0f);
+                                10.0f, 7);
         ImGui::TableSetupColumn("серт+",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                10.0f);
-        ImGui::TableSetupColumn("Примечание");
+                                10.0f, 8);
+        ImGui::TableSetupColumn("Примечание", 0, 0.0f, 9);
         ImGui::TableHeadersRow();
+
+        sortEmployees(employees, ImGui::TableGetSortSpecs());
 
         for (size_t i = 0; i < employees.size(); ++i) {
 
@@ -556,10 +614,14 @@ void EmployeesPanel::render() {
             // ID
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
+            bool isSelected = currentRecord.id == employees[i].id;
             if (ImGui::Selectable(std::to_string(employees[i].id).c_str(),
-                                  selectedIndex == i,
+                                  isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                writeToDatabase();
                 selectedIndex = i;
+                oldIndex = i;
+                currentRecord = employees[i];
             }
 
             // ФИО
@@ -619,21 +681,6 @@ void EmployeesPanel::render() {
             ImGui::Text("%s", employees[i]
                                   .note.substr(0, employees[i].note.find("\n"))
                                   .c_str());
-            // выделена другая строка
-            if (oldIndex != selectedIndex) {
-                // записать старые данные
-                if (writeToDatabase()) {
-                    // Обновляем строку таблицы новыми данными
-                    employees[oldIndex] = currentRecord;
-                    // printf("Запись обновлена\n");
-                }
-                // printf("старый указатель %i, новый указатель %i \n",
-                // oldIndex,
-                //        selectedEmployee);
-                // взять в редактор новые данные
-                currentRecord = employees[selectedIndex];
-                oldIndex = selectedIndex;
-            }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
             if (goBottom && i == employees.size() - 1) {

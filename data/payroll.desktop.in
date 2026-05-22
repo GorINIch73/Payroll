@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Payroll
+Name[ru]=Аудит начисления заработной платы
+Comment=Payroll audit and statements application
+Comment[ru]=Аудит начисления заработной платы и расчетных ведомостей
+Exec=Payroll
+Icon=payroll
+Terminal=false
+Categories=Office;Finance;
+StartupNotify=true
+StartupWMClass=Payroll

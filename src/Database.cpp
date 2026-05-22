@@ -1,6 +1,29 @@
 #include "Database.h"
 #include <cstdio>
 #include <iostream>
+#include <type_traits>
+
+namespace {
+bool bindValue(sqlite3_stmt *stmt, int index, const Database::SqlValue &value) {
+    return std::visit(
+               [stmt, index](const auto &v) -> int {
+                   using T = std::decay_t<decltype(v)>;
+                   if constexpr (std::is_same_v<T, std::nullptr_t>) {
+                       return sqlite3_bind_null(stmt, index);
+                   } else if constexpr (std::is_same_v<T, int>) {
+                       return sqlite3_bind_int(stmt, index, v);
+                   } else if constexpr (std::is_same_v<T, double>) {
+                       return sqlite3_bind_double(stmt, index, v);
+                   } else if constexpr (std::is_same_v<T, std::string>) {
+                       return sqlite3_bind_text(stmt, index, v.c_str(), -1,
+                                                SQLITE_TRANSIENT);
+                   } else if constexpr (std::is_same_v<T, bool>) {
+                       return sqlite3_bind_int(stmt, index, v ? 1 : 0);
+                   }
+               },
+               value) == SQLITE_OK;
+}
+} // namespace
 
 Database::Database()
     : db(nullptr) {
@@ -23,6 +46,14 @@ bool Database::Open(const std::string &Path) {
 
         if (db)
             sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_busy_timeout(db, 5000);
+    if (!Execute("PRAGMA foreign_keys = ON;")) {
+        std::cerr << "Не удалось включить контроль внешних ключей SQLite."
+                  << std::endl;
+        Close();
         return false;
     }
 
@@ -51,6 +82,40 @@ bool Database::Execute(const std::string &sql) {
         sqlite3_free(errMsg);
         return false;
     }
+    return true;
+}
+
+bool Database::ExecutePrepared(const std::string &sql,
+                               const std::vector<SqlValue> &params) {
+    if (!db)
+        return false;
+
+    sqlite3_stmt *stmt = nullptr;
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db)
+                  << std::endl;
+        return false;
+    }
+
+    for (size_t i = 0; i < params.size(); ++i) {
+        if (!bindValue(stmt, static_cast<int>(i + 1), params[i])) {
+            std::cerr << "Failed to bind parameter " << (i + 1) << ": "
+                      << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            return false;
+        }
+    }
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        std::cerr << "Failed to execute statement: " << sqlite3_errmsg(db)
+                  << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
     return true;
 }
 

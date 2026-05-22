@@ -54,6 +54,7 @@ class StatementsPanel : public Panel {
         bool delAccrualRecord();
         bool isCurrentChanged();
         bool isAccrualCurrentChanged();
+        double calculateSalaryBase(int statementId) const;
 
     private:
         Database &db;

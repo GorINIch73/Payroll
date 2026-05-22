@@ -10,8 +10,14 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <cstdlib>
 #include <iostream>
 #include <string>
+
+static void glfw_error_callback(int error, const char *description) {
+    std::cerr << "GLFW error " << error << ": "
+              << (description ? description : "unknown error") << std::endl;
+}
 
 // Callback для обновления размеров ImGui при изменении окна
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
@@ -36,10 +42,20 @@ int main() {
     // }
     // Инициализация GLFW и OpenGL
     // без этого прыгала и не всегда срабатывала мышь
+    glfwSetErrorCallback(glfw_error_callback);
     glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
-    glfwInit();
+    if (!glfwInit()) {
+        std::cerr << "Не удалось инициализировать GLFW." << std::endl;
+        return EXIT_FAILURE;
+    }
+
     GLFWwindow *window =
         glfwCreateWindow(1280, 720, "Payroll App", nullptr, nullptr);
+    if (!window) {
+        std::cerr << "Не удалось создать окно приложения." << std::endl;
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // VSync
@@ -103,7 +119,7 @@ int main() {
             glfwWaitEventsTimeout(0.033); // ~30 FPS
         }
 
-        // если надо грузим шрифт - не работает динамически - хз почему
+        // Если надо, меняем шрифт до NewFrame: во время кадра атлас заблокирован.
         if (settings.needLoadFonts)
             settings.LoadFonts();
 

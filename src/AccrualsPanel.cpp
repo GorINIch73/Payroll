@@ -91,26 +91,25 @@ void AccrualsPanel::refresh() {
 
 bool AccrualsPanel::isCurrentChanged() {
 
-    // если индексы не определены
     if (currentRecord.id < 0)
         return false;
-    if (oldIndex < 0)
+
+    int currentIndex = FindIndexById(accruals, currentRecord.id);
+    if (currentIndex < 0)
         return false;
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << accruals[oldIndex].note << std::endl;
-
     // срапвниваем поля
-    if (currentRecord.name != accruals[oldIndex].name)
+    if (currentRecord.name != accruals[currentIndex].name)
         return true;
-    if (currentRecord.percentage != accruals[oldIndex].percentage)
+    if (currentRecord.percentage != accruals[currentIndex].percentage)
         return true;
-    if (currentRecord.this_salary != accruals[oldIndex].this_salary)
+    if (currentRecord.this_salary != accruals[currentIndex].this_salary)
         return true;
-    if (currentRecord.verification != accruals[oldIndex].verification)
+    if (currentRecord.verification != accruals[currentIndex].verification)
         return true;
-    if (currentRecord.note != accruals[oldIndex].note)
+    if (currentRecord.note != accruals[currentIndex].note)
         return true;
 
     return false;
@@ -325,10 +324,14 @@ void AccrualsPanel::render() {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
+            bool isSelected = currentRecord.id == accruals[i].id;
             if (ImGui::Selectable(std::to_string(accruals[i].id).c_str(),
-                                  selectedIndex == i,
+                                  isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                writeToDatabase();
                 selectedIndex = i;
+                oldIndex = i;
+                currentRecord = accruals[i];
             }
 
             ImGui::TableSetColumnIndex(1);
@@ -360,21 +363,6 @@ void AccrualsPanel::render() {
             ImGui::Text("%s", accruals[i]
                                   .note.substr(0, accruals[i].note.find("\n"))
                                   .c_str());
-            // выделена другая строка
-            if (oldIndex != selectedIndex) {
-                // записать старые данные
-                if (writeToDatabase()) {
-                    // Обновляем строку таблицы новыми данными
-                    accruals[oldIndex] = currentRecord;
-                    // printf("Запись обновлена\n");
-                }
-                // printf("старый указатель %i, новый указатель %i \n",
-                // oldIndex,
-                //        selectedEmployee);
-                // взять в редактор новые данные
-                currentRecord = accruals[selectedIndex];
-                oldIndex = selectedIndex;
-            }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
             if (goBottom && i == accruals.size() - 1) {

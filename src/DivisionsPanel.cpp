@@ -25,17 +25,11 @@ DivisionsPanel::~DivisionsPanel() { writeToDatabase(); }
 
 bool DivisionsPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
-    std::string sql;
     if (isCurrentChanged()) {
-        sql = "UPDATE Divisions SET division_name='" +
-              currentRecord.division_name + "', note='" + currentRecord.note +
-              "' WHERE id=" + std::to_string(currentRecord.id) + ";";
-
-        // std::cout << currentRecord.note << std::endl;
-        // std::cout << sql << std::endl;
-
-        printf("Обновление записи ... \n");
-        return db.Execute(sql);
+        return db.ExecutePrepared(
+            "UPDATE Divisions SET division_name = ?, note = ? WHERE id = ?;",
+            {currentRecord.division_name, currentRecord.note,
+             currentRecord.id});
     }
 
     return false;
@@ -43,19 +37,17 @@ bool DivisionsPanel::writeToDatabase() {
 
 bool DivisionsPanel::addRecord() {
     // добавление новой записи в базу
-    std::string sql;
-    sql = "INSERT INTO Divisions (division_name) VALUES ( '');";
-    return db.Execute(sql);
+    return db.ExecutePrepared("INSERT INTO Divisions (division_name) VALUES "
+                              "(?);",
+                              {std::string("")});
 }
 
 bool DivisionsPanel::delRecord() {
     // удаление текущей записи
     // хз надо ли контролить зависимые записи или пусть пустыми остаются
     if (currentRecord.id >= 0) {
-        std::string sql;
-        sql = "DELETE FROM Divisions WHERE id =" +
-              std::to_string(currentRecord.id) + ";";
-        return db.Execute(sql);
+        return db.ExecutePrepared("DELETE FROM Divisions WHERE id = ?;",
+                                  {currentRecord.id});
     }
 
     return false;
@@ -79,20 +71,19 @@ void DivisionsPanel::refresh() {
 
 bool DivisionsPanel::isCurrentChanged() {
 
-    // если индексы не определены
     if (currentRecord.id < 0)
         return false;
-    if (oldIndex < 0)
+
+    int currentIndex = FindIndexById(divisions, currentRecord.id);
+    if (currentIndex < 0)
         return false;
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << divisions[oldIndex].note << std::endl;
-
     // срапвниваем поля
-    if (currentRecord.division_name != divisions[oldIndex].division_name)
+    if (currentRecord.division_name != divisions[currentIndex].division_name)
         return true;
-    if (currentRecord.note != divisions[oldIndex].note)
+    if (currentRecord.note != divisions[currentIndex].note)
         return true;
 
     return false;
@@ -252,10 +243,14 @@ void DivisionsPanel::render() {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
+            bool isSelected = currentRecord.id == divisions[i].id;
             if (ImGui::Selectable(std::to_string(divisions[i].id).c_str(),
-                                  selectedIndex == i,
+                                  isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                writeToDatabase();
                 selectedIndex = i;
+                oldIndex = i;
+                currentRecord = divisions[i];
             }
 
             ImGui::TableSetColumnIndex(1);
@@ -265,18 +260,6 @@ void DivisionsPanel::render() {
             ImGui::Text("%s", divisions[i]
                                   .note.substr(0, divisions[i].note.find("\n"))
                                   .c_str());
-            // выделена другая строка
-            if (oldIndex != selectedIndex) {
-                // записать старые данные
-                if (writeToDatabase()) {
-                    // Обновляем строку таблицы новыми данными
-                    divisions[oldIndex] = currentRecord;
-                    // printf("Запись обновлена\n");
-                }
-                // взять в редактор новые данные
-                currentRecord = divisions[selectedIndex];
-                oldIndex = selectedIndex;
-            }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
             if (goBottom && i == divisions.size() - 1) {

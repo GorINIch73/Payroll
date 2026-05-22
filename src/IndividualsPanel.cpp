@@ -79,20 +79,19 @@ void IndividualsPanel::refresh() {
 
 bool IndividualsPanel::isCurrentChanged() {
 
-    // если индексы не определены
     if (currentRecord.id < 0)
         return false;
-    if (oldIndex < 0)
+
+    int currentIndex = FindIndexById(individuals, currentRecord.id);
+    if (currentIndex < 0)
         return false;
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << individuals[oldIndex].note << std::endl;
-
     // срапвниваем поля
-    if (currentRecord.full_name != individuals[oldIndex].full_name)
+    if (currentRecord.full_name != individuals[currentIndex].full_name)
         return true;
-    if (currentRecord.note != individuals[oldIndex].note)
+    if (currentRecord.note != individuals[currentIndex].note)
         return true;
 
     return false;
@@ -252,10 +251,14 @@ void IndividualsPanel::render() {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
+            bool isSelected = currentRecord.id == individuals[i].id;
             if (ImGui::Selectable(std::to_string(individuals[i].id).c_str(),
-                                  selectedIndex == i,
+                                  isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                writeToDatabase();
                 selectedIndex = i;
+                oldIndex = i;
+                currentRecord = individuals[i];
             }
 
             ImGui::TableSetColumnIndex(1);
@@ -278,21 +281,6 @@ void IndividualsPanel::render() {
             // ImGui::Text("%.2f", individuals[i].salary);
             // ImGui::PopStyleVar();
             //
-            // выделена другая строка
-            if (oldIndex != selectedIndex) {
-                // записать старые данные
-                if (writeToDatabase()) {
-                    // Обновляем строку таблицы новыми данными
-                    individuals[oldIndex] = currentRecord;
-                    // printf("Запись обновлена\n");
-                }
-                // printf("старый указатель %i, новый указатель %i \n",
-                // oldIndex,
-                //        selectedEmployee);
-                // взять в редактор новые данные
-                currentRecord = individuals[selectedIndex];
-                oldIndex = selectedIndex;
-            }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
             if (goBottom && i == individuals.size() - 1) {

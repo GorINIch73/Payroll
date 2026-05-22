@@ -87,24 +87,23 @@ void PositionsPanel::refresh() {
 
 bool PositionsPanel::isCurrentChanged() {
 
-    // если индексы не определены
     if (currentRecord.id < 0)
         return false;
-    if (oldIndex < 0)
+
+    int currentIndex = FindIndexById(positions, currentRecord.id);
+    if (currentIndex < 0)
         return false;
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << positions[oldIndex].note << std::endl;
-
     // срапвниваем поля
-    if (currentRecord.job_title != positions[oldIndex].job_title)
+    if (currentRecord.job_title != positions[currentIndex].job_title)
         return true;
-    if (currentRecord.salary != positions[oldIndex].salary)
+    if (currentRecord.salary != positions[currentIndex].salary)
         return true;
-    if (currentRecord.norm != positions[oldIndex].norm)
+    if (currentRecord.norm != positions[currentIndex].norm)
         return true;
-    if (currentRecord.note != positions[oldIndex].note)
+    if (currentRecord.note != positions[currentIndex].note)
         return true;
 
     return false;
@@ -327,10 +326,14 @@ void PositionsPanel::render() {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
+            bool isSelected = currentRecord.id == positions[i].id;
             if (ImGui::Selectable(std::to_string(positions[i].id).c_str(),
-                                  selectedIndex == i,
+                                  isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                writeToDatabase();
                 selectedIndex = i;
+                oldIndex = i;
+                currentRecord = positions[i];
             }
 
             ImGui::TableSetColumnIndex(1);
@@ -372,21 +375,6 @@ void PositionsPanel::render() {
             // ImGui::Text("%.2f", positions[i].salary);
             // ImGui::PopStyleVar();
             //
-            // выделена другая строка
-            if (oldIndex != selectedIndex) {
-                // записать старые данные
-                if (writeToDatabase()) {
-                    // Обновляем строку таблицы новыми данными
-                    positions[oldIndex] = currentRecord;
-                    // printf("Запись обновлена\n");
-                }
-                // printf("старый указатель %i, новый указатель %i \n",
-                // oldIndex,
-                //        selectedEmployee);
-                // взять в редактор новые данные
-                currentRecord = positions[selectedIndex];
-                oldIndex = selectedIndex;
-            }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
             if (goBottom && i == positions.size() - 1) {

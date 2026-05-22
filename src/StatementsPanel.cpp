@@ -27,6 +27,69 @@
 
 #include "imgui_components.h"
 
+namespace {
+int compareStatements(const Statement &left, const Statement &right,
+                      ImGuiID columnId) {
+    switch (columnId) {
+    case 0:
+        return left.id - right.id;
+    case 1:
+        return left.month - right.month;
+    case 2:
+        return left.employee.compare(right.employee);
+    case 3:
+        return (left.salary > right.salary) - (left.salary < right.salary);
+    case 4:
+        return (left.rate > right.rate) - (left.rate < right.rate);
+    case 5:
+        return (left.hours_norm > right.hours_norm) -
+               (left.hours_norm < right.hours_norm);
+    case 6:
+        return (left.hours_worked > right.hours_worked) -
+               (left.hours_worked < right.hours_worked);
+    case 7:
+        return static_cast<int>(left.timesheet_verified) -
+               static_cast<int>(right.timesheet_verified);
+    case 8:
+        return left.note.compare(right.note);
+    default:
+        return 0;
+    }
+}
+
+void sortStatements(std::vector<Statement> &statements,
+                    const ImGuiTableSortSpecs *sortSpecs) {
+    if (!sortSpecs || sortSpecs->SpecsCount == 0)
+        return;
+
+    std::stable_sort(
+        statements.begin(), statements.end(),
+        [sortSpecs](const Statement &left, const Statement &right) {
+            for (int i = 0; i < sortSpecs->SpecsCount; ++i) {
+                const ImGuiTableColumnSortSpecs &spec = sortSpecs->Specs[i];
+                int result = compareStatements(left, right, spec.ColumnUserID);
+                if (result == 0)
+                    continue;
+
+                return spec.SortDirection == ImGuiSortDirection_Ascending
+                           ? result < 0
+                           : result > 0;
+            }
+
+            return left.id < right.id;
+        });
+}
+
+template <typename T> int findIndexById(const std::vector<T> &items, int id) {
+    auto it = std::find_if(items.begin(), items.end(),
+                           [id](const T &item) { return item.id == id; });
+    if (it == items.end())
+        return -1;
+
+    return static_cast<int>(std::distance(items.begin(), it));
+}
+} // namespace
+
 StatementsPanel::StatementsPanel(Database &db)
     : Panel("Расчетные ведомости"),
       db(db) {
@@ -290,29 +353,26 @@ void StatementsPanel::refreshAccruals() {
 
 bool StatementsPanel::isCurrentChanged() {
 
-    // если индексы не определены
     if (currentRecord.id < 0)
         return false;
-    if (oldIndex < 0)
+
+    const int currentIndex = findIndexById(statements, currentRecord.id);
+    if (currentIndex < 0)
         return false;
 
-    // std::cout << " тест " << str << std::endl;
-    // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << statements[oldIndex].note << std::endl;
-
     // срапвниваем поля
-    if (currentRecord.month != statements[oldIndex].month)
+    if (currentRecord.month != statements[currentIndex].month)
         return true;
-    if (currentRecord.employee_id != statements[oldIndex].employee_id)
+    if (currentRecord.employee_id != statements[currentIndex].employee_id)
         return true;
-    if (currentRecord.hours_norm != statements[oldIndex].hours_norm)
+    if (currentRecord.hours_norm != statements[currentIndex].hours_norm)
         return true;
-    if (currentRecord.hours_worked != statements[oldIndex].hours_worked)
+    if (currentRecord.hours_worked != statements[currentIndex].hours_worked)
         return true;
     if (currentRecord.timesheet_verified !=
-        statements[oldIndex].timesheet_verified)
+        statements[currentIndex].timesheet_verified)
         return true;
-    if (currentRecord.note != statements[oldIndex].note)
+    if (currentRecord.note != statements[currentIndex].note)
         return true;
 
     return false;
@@ -320,39 +380,45 @@ bool StatementsPanel::isCurrentChanged() {
 
 bool StatementsPanel::isAccrualCurrentChanged() {
 
-    // если индексы не определены
     if (currentAccrualRecord.id < 0)
-        return false;
-    if (oldAccrualIndex < 0)
         return false;
     if (currentRecord.id < 0)
         return false; // если не выделена ведомость ничего не делаем
 
-    // std::cout << " тест " << str << std::endl;
-    // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << statements[oldIndex].note << std::endl;
-
-    // хз надо ли проверить ID а то при смене ведомовти хз что будет
+    const int currentIndex =
+        findIndexById(list_accruals, currentAccrualRecord.id);
+    if (currentIndex < 0)
+        return false;
 
     // сравниваем поля
     if (currentAccrualRecord.statement_id !=
-        list_accruals[oldAccrualIndex].statement_id)
+        list_accruals[currentIndex].statement_id)
         return true;
     if (currentAccrualRecord.accrual_id !=
-        list_accruals[oldAccrualIndex].accrual_id)
+        list_accruals[currentIndex].accrual_id)
         return true;
-    if (currentAccrualRecord.amount != list_accruals[oldAccrualIndex].amount)
+    if (currentAccrualRecord.amount != list_accruals[currentIndex].amount)
         return true;
     if (currentAccrualRecord.order_id !=
-        list_accruals[oldAccrualIndex].order_id)
+        list_accruals[currentIndex].order_id)
         return true;
     if (currentAccrualRecord.verified !=
-        list_accruals[oldAccrualIndex].verified)
+        list_accruals[currentIndex].verified)
         return true;
-    if (currentAccrualRecord.note != list_accruals[oldAccrualIndex].note)
+    if (currentAccrualRecord.note != list_accruals[currentIndex].note)
         return true;
 
     return false;
+}
+
+double StatementsPanel::calculateSalaryBase(int statementId) const {
+    double salaryBase = 0.0f;
+    for (const auto &accrual : list_accruals) {
+        if (accrual.statement_id == statementId && accrual.this_salary) {
+            salaryBase += accrual.amount;
+        }
+    }
+    return salaryBase;
 }
 
 void StatementsPanel::render() {
@@ -535,6 +601,9 @@ void StatementsPanel::render() {
         ImGui::EndGroup();
         // -----------------------------------------------------------------------------------------------------------
         // Левая фиксированная часть - редактирование данных ведомости
+        const double salaryBase = calculateSalaryBase(currentRecord.id);
+        sSalary = salaryBase;
+
         ImGui::BeginChild("LeftPanel", ImVec2(fixed_width, 0), true);
         // ImGui::Text("Фиксированная часть (200px)");
         // -----------------------------------------------------------------------------------------------------------
@@ -598,7 +667,7 @@ void StatementsPanel::render() {
         // расчет полного оклада по выплате для стравнения
         double rSalary = 0.0f;
         if (currentRecord.rate != 0 && currentRecord.hours_worked != 0)
-            rSalary = sSalary * currentRecord.hours_norm /
+            rSalary = salaryBase * currentRecord.hours_norm /
                       (currentRecord.rate * currentRecord.hours_worked);
 
         if (rSalary != currentRecord.salary)
@@ -806,9 +875,6 @@ void StatementsPanel::render() {
             ImGui::TableHeadersRow();
 
             summaAccirals = 0.00f;
-            double oldsSalary =
-                sSalary; // запоминаем старое значение для расчета процента
-            sSalary = 0.00f;
 
             for (size_t i = 0; i < list_accruals.size(); ++i) {
 
@@ -831,10 +897,6 @@ void StatementsPanel::render() {
 
                 // расчет суммы начислений
                 summaAccirals = summaAccirals + list_accruals[i].amount;
-                // расчет суммарного фактического оклада (сумма всех начислений
-                // помеченых как оклад)
-                if (list_accruals[i].this_salary)
-                    sSalary = sSalary + list_accruals[i].amount;
 
                 // таблица начислений
                 // --------------------------------------------------------
@@ -852,8 +914,11 @@ void StatementsPanel::render() {
                                            row_color);
                 }
 
+                const bool isAccrualSelected =
+                    currentAccrualRecord.id == list_accruals[i].id;
+
                 // подсветка выбранной строки
-                if (selectedAccrualIndex == i) {
+                if (isAccrualSelected) {
                     ImGui::TableSetBgColor(
                         ImGuiTableBgTarget_RowBg0,
                         ImGui::GetColorU32(ImGuiCol_HeaderHovered));
@@ -861,22 +926,25 @@ void StatementsPanel::render() {
                 // ID
                 ImGui::TableSetColumnIndex(0);
                 // выделение всей    строки
-                if (selectedAccrualIndex == i) {
+                if (isAccrualSelected) {
                     // если строка уже выделена, то просто текст ID
                     ImGui::Text("%s",
                                 std::to_string(list_accruals[i].id).c_str());
                 } else {
                     if (ImGui::Selectable(
                             std::to_string(list_accruals[i].id).c_str(),
-                            selectedAccrualIndex == i,
+                            isAccrualSelected,
                             ImGuiSelectableFlags_SpanAllColumns)) {
+                        writeAccrualToDatabase();
                         selectedAccrualIndex = i;
+                        oldAccrualIndex = i;
+                        currentAccrualRecord = list_accruals[i];
                     }
                 }
 
                 // начисление
                 ImGui::TableSetColumnIndex(1);
-                if (selectedAccrualIndex == i) {
+                if (isAccrualSelected) {
                     // комбобокс с фильтром
                     if (focusAccrualFirst) {
                         ImGui::SetKeyboardFocusHere(); // если добавлена новая
@@ -905,7 +973,7 @@ void StatementsPanel::render() {
                 // сумма
                 ImGui::TableSetColumnIndex(2);
                 // прижимае к правой тороне
-                if (selectedAccrualIndex == i) {
+                if (isAccrualSelected) {
                     ImGui::SetNextItemWidth(ImGui::GetColumnWidth());
                     // ImGui::InputDouble("##сумма",
                     // &currentAccrualRecord.amount,
@@ -934,8 +1002,8 @@ void StatementsPanel::render() {
                 // Процент ----------------------------
                 // расчет процента от оклада
                 double rPercent = 0.0f;
-                if (oldsSalary != 0)
-                    rPercent = list_accruals[i].amount / oldsSalary * 100;
+                if (salaryBase != 0)
+                    rPercent = list_accruals[i].amount / salaryBase * 100;
                 // если процент не равен справочному, то красным
                 ImGui::TableSetColumnIndex(3);
                 if (rPercent != list_accruals[i].percentage)
@@ -946,7 +1014,7 @@ void StatementsPanel::render() {
 
                 // Приказ
                 ImGui::TableSetColumnIndex(4);
-                if (selectedAccrualIndex == i) {
+                if (isAccrualSelected) {
                     // комбобокс с фильтром
                     if (ComboWithFilter("##ORD", currentAccrualRecord.order_id,
                                         orders)) {
@@ -967,7 +1035,7 @@ void StatementsPanel::render() {
 
                 // Проверено
                 ImGui::TableSetColumnIndex(5);
-                if (selectedAccrualIndex == i) {
+                if (isAccrualSelected) {
                     ImGui::Checkbox("##Verified",
                                     &currentAccrualRecord.verified);
                 } else
@@ -975,7 +1043,7 @@ void StatementsPanel::render() {
 
                 // Примечание
                 ImGui::TableSetColumnIndex(6);
-                if (selectedAccrualIndex == i) {
+                if (isAccrualSelected) {
                     ImGui::InputText("##note", &currentAccrualRecord.note);
                 } else
                     ImGui::Text("%s", list_accruals[i].note.c_str());
@@ -988,23 +1056,6 @@ void StatementsPanel::render() {
                 //                       .note.substr(0,
                 //                       list_accruals[i].note.find("\n"))
                 //                       .c_str());
-                // выделена другая строка
-                if (oldAccrualIndex != selectedAccrualIndex) {
-                    // записать старые данные
-                    if (writeAccrualToDatabase()) {
-                        // Обновляем строку таблицы новыми данными
-                        list_accruals[oldAccrualIndex] = currentAccrualRecord;
-                        // printf("Запись обновлена\n");
-                    }
-                    // printf("старый указатель %i, новый указатель %i \n",
-                    // oldIndex,
-                    //        selectedStatement);
-                    // взять в редактор новые данные
-                    if (selectedAccrualIndex >= 0)
-                        currentAccrualRecord =
-                            list_accruals[selectedAccrualIndex];
-                    oldAccrualIndex = selectedAccrualIndex;
-                }
                 // Прокручиваем к последнему элементу если выделена последняя
                 // строка
                 // - для добавленной записи
@@ -1039,39 +1090,43 @@ void StatementsPanel::render() {
     if (ImGui::BeginTable("Statements", 9,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                               ImGuiTableFlags_RowBg |
-                              ImGuiTableFlags_ScrollY)) {
+                              ImGuiTableFlags_ScrollY |
+                              ImGuiTableFlags_Sortable |
+                              ImGuiTableFlags_SortMulti)) {
 
         ImGui::TableSetupColumn("ID",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                50.0f);
+                                50.0f, 0);
         ImGui::TableSetupColumn("Месяц",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                100.0f);
-        ImGui::TableSetupColumn("Сотрудник");
+                                100.0f, 1);
+        ImGui::TableSetupColumn("Сотрудник", 0, 0.0f, 2);
         ImGui::TableSetupColumn("Оклад",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                150.0f);
+                                150.0f, 3);
         ImGui::TableSetupColumn("Ставка",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                100.0f);
+                                100.0f, 4);
         ImGui::TableSetupColumn("Норма",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                100.0f);
+                                100.0f, 5);
         ImGui::TableSetupColumn("Часы",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                100.0f);
+                                100.0f, 6);
         ImGui::TableSetupColumn("табель+",
                                 ImGuiTableColumnFlags_WidthFixed |
                                     ImGuiTableColumnFlags_NoResize,
-                                10.0f);
-        ImGui::TableSetupColumn("Примечание");
+                                10.0f, 7);
+        ImGui::TableSetupColumn("Примечание", 0, 0.0f, 8);
         ImGui::TableHeadersRow();
+
+        sortStatements(statements, ImGui::TableGetSortSpecs());
 
         for (size_t i = 0; i < statements.size(); ++i) {
 
@@ -1140,13 +1195,23 @@ void StatementsPanel::render() {
             }
             // ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, row_color);
 
+            const bool isStatementSelected = currentRecord.id == statements[i].id;
+
             // ID
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
             if (ImGui::Selectable(std::to_string(statements[i].id).c_str(),
-                                  selectedIndex == i,
+                                  isStatementSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                writeToDatabase();
                 selectedIndex = i;
+                oldIndex = i;
+                currentRecord = statements[i];
+
+                // сбрасываем выбранное начисление при смене ведомости
+                selectedAccrualIndex = -1;
+                oldAccrualIndex = -1;
+                currentAccrualRecord = List_accrual{};
             }
 
             // месяц
@@ -1215,24 +1280,6 @@ void StatementsPanel::render() {
             ImGui::Text("%s", statements[i]
                                   .note.substr(0, statements[i].note.find("\n"))
                                   .c_str());
-            // выделена другая строка
-            if (oldIndex != selectedIndex) {
-                // записать старые данные
-                if (writeToDatabase()) {
-                    // Обновляем строку таблицы новыми данными
-                    statements[oldIndex] = currentRecord;
-                    // printf("Запись обновлена\n");
-                }
-                // printf("старый указатель %i, новый указатель %i \n",
-                // oldIndex,
-                //        selectedStatement);
-                // взять в редактор новые данные
-                currentRecord = statements[selectedIndex];
-                oldIndex = selectedIndex;
-
-                // сбрасываем индекс списка начислений
-                selectedAccrualIndex = -1;
-            }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
             if (goBottom && i == statements.size() - 1) {

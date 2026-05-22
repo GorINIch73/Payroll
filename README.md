@@ -6,12 +6,20 @@
 ![Сотрудники](images/Employees.jpg)
 
 ## настройка зависимостей
+Зависимости ImGui и ImGuiFileDialog CMake может скачать автоматически при конфигурации проекта. Если нужна полностью офлайн-сборка, положите их в `thirdparty`:
+
 ```bash
 git clone -b docking https://github.com/ocornut/imgui.git  thirdparty/imgui
 git clone https://github.com/aiekick/ImGuiFileDialog.git thirdparty/ImGuiFileDialog
-git clone --depth=1 https://github.com/libharu/libharu.git thirdparty/libharu
-git clone --depth=1 https://github.com/nlohmann/json.git thirdparty/json
-git clone https://github.com/dacap/clip.git thirdparty/clip
+```
+
+Для сборки также нужна системная библиотека OpenGL. GLFW и SQLite CMake использует из `thirdparty` или скачивает автоматически.
+
+Для полностью офлайн-сборки SQLite можно положить как amalgamation:
+
+```bash
+thirdparty/sqlite3/sqlite3.c
+thirdparty/sqlite3/sqlite3.h
 ```
 
 ## фонты
@@ -50,6 +58,18 @@ cmake -G "MinGW Makefiles" ..
 cmake --build . 
 ```
 
+## Установка в систему
+```bash
+cmake --install build
+```
+
+По умолчанию приложение устанавливается в `/usr/local`: бинарник в `bin`, desktop-файл в `share/applications`, иконка в `share/icons/hicolor/scalable/apps`, шрифты в `share/Payroll/fonts`.
+
+Для установки в другой префикс:
+```bash
+cmake --install build --prefix /opt/payroll
+```
+
 
 ## для релиза
 ``` bash
@@ -68,6 +88,4 @@ libgcc_s_seh-1.dll
 libstdc++-6.dll
 glfw3.dll
 libpng16-16.dll
-libsqlite3-0.dll
 zlib1.dll
-

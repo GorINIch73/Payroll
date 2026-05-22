@@ -17,6 +17,67 @@
 #include "imgui_components.h"
 #include <unicode/utf8.h>
 
+namespace {
+const char *monthName(int month) {
+    static const char *months[] = {
+        "Январь",   "Февраль", "Март",   "Апрель",   "Май",    "Июнь",
+        "Июль",     "Август",  "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"};
+
+    if (month < 1 || month > 12)
+        return "";
+
+    return months[month - 1];
+}
+
+int compareOrderAccrualDetails(const OrderAccrualDetail &left,
+                               const OrderAccrualDetail &right,
+                               ImGuiID columnId) {
+    switch (columnId) {
+    case 0:
+        return left.full_name.compare(right.full_name);
+    case 1:
+        return left.job_title.compare(right.job_title);
+    case 2:
+        return left.month - right.month;
+    case 3:
+        return left.accrual.compare(right.accrual);
+    case 4:
+        return (left.percent > right.percent) - (left.percent < right.percent);
+    case 5:
+        return static_cast<int>(left.verified) - static_cast<int>(right.verified);
+    case 6:
+        return left.note.compare(right.note);
+    default:
+        return 0;
+    }
+}
+
+void sortOrderAccrualDetails(std::vector<OrderAccrualDetail> &details,
+                             const ImGuiTableSortSpecs *sortSpecs) {
+    if (!sortSpecs || sortSpecs->SpecsCount == 0)
+        return;
+
+    std::stable_sort(
+        details.begin(), details.end(),
+        [sortSpecs](const OrderAccrualDetail &left,
+                    const OrderAccrualDetail &right) {
+            for (int i = 0; i < sortSpecs->SpecsCount; ++i) {
+                const ImGuiTableColumnSortSpecs &spec = sortSpecs->Specs[i];
+                int result = compareOrderAccrualDetails(left, right,
+                                                        spec.ColumnUserID);
+                if (result == 0)
+                    continue;
+
+                return spec.SortDirection == ImGuiSortDirection_Ascending
+                           ? result < 0
+                           : result > 0;
+            }
+
+            return left.list_accrual_id < right.list_accrual_id;
+        });
+}
+} // namespace
+
 OrdersPanel::OrdersPanel(Database &db)
     : Panel("Справочник приказов"),
       db(db) {
@@ -89,31 +150,110 @@ void OrdersPanel::refresh() {
         &orders, nullptr);
 }
 
+void OrdersPanel::refreshAccrualDetails() {
+    accrualDetails.clear();
+    if (currentRecord.id < 0)
+        return;
+
+    const char *sql = R"(
+        SELECT
+            l.id,
+            i.full_name,
+            p.job_title,
+            s.month,
+            a.name,
+            CASE
+                WHEN salary_base.amount IS NOT NULL AND salary_base.amount <> 0
+                THEN l.amount / salary_base.amount * 100
+                ELSE 0
+            END AS percent,
+            l.verified,
+            l.note
+        FROM List_accruals l
+        LEFT JOIN Accruals a ON l.accrual_id = a.id
+        LEFT JOIN Statements s ON s.id = l.statement_id
+        LEFT JOIN Employees e ON e.id = s.employee_id
+        LEFT JOIN Individuals i ON e.individual_id = i.id
+        LEFT JOIN Positions p ON e.position_id = p.id
+        LEFT JOIN (
+            SELECT l2.statement_id, SUM(l2.amount) AS amount
+            FROM List_accruals l2
+            JOIN Accruals a2 ON a2.id = l2.accrual_id
+            WHERE a2.this_salary = 1
+            GROUP BY l2.statement_id
+        ) salary_base ON salary_base.statement_id = l.statement_id
+        WHERE l.order_id = ?
+        ORDER BY i.full_name, s.month, a.name;
+    )";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (sqlite3_prepare_v2(db.getHandle(), sql, -1, &stmt, nullptr) !=
+        SQLITE_OK) {
+        std::cerr << "Failed to prepare order details query: "
+                  << sqlite3_errmsg(db.getHandle()) << std::endl;
+        return;
+    }
+
+    sqlite3_bind_int(stmt, 1, currentRecord.id);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        accrualDetails.push_back(OrderAccrualDetail{
+            sqlite3_column_int(stmt, 0),
+            reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1))
+                ? reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1))
+                : "",
+            reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))
+                ? reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))
+                : "",
+            sqlite3_column_int(stmt, 3),
+            reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4))
+                ? reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4))
+                : "",
+            sqlite3_column_double(stmt, 5),
+            sqlite3_column_int(stmt, 6) > 0,
+            reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7))
+                ? reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7))
+                : "",
+        });
+    }
+
+    sqlite3_finalize(stmt);
+}
+
 bool OrdersPanel::isCurrentChanged() {
 
-    // если индексы не определены
     if (currentRecord.id < 0)
         return false;
-    if (oldIndex < 0)
+
+    int currentIndex = FindIndexById(orders, currentRecord.id);
+    if (currentIndex < 0)
         return false;
 
     // std::cout << " тест " << str << std::endl;
     // std::cout << " новое  :" << currentRecord.note << std::endl;
-    // std::cout << " старое :" << orders[oldIndex].note << std::endl;
-
     // срапвниваем поля
-    if (currentRecord.number != orders[oldIndex].number)
+    if (currentRecord.number != orders[currentIndex].number)
         return true;
-    if (currentRecord.date != orders[oldIndex].date)
+    if (currentRecord.date != orders[currentIndex].date)
         return true;
-    if (currentRecord.found != orders[oldIndex].found)
+    if (currentRecord.found != orders[currentIndex].found)
         return true;
-    if (currentRecord.protocol_found != orders[oldIndex].protocol_found)
+    if (currentRecord.protocol_found !=
+        orders[currentIndex].protocol_found)
         return true;
-    if (currentRecord.note != orders[oldIndex].note)
+    if (currentRecord.note != orders[currentIndex].note)
         return true;
 
     return false;
+}
+
+bool OrdersPanel::saveAccrualDetail(const OrderAccrualDetail &detail) {
+    if (detail.list_accrual_id < 0)
+        return false;
+
+    return db.ExecutePrepared(
+        "UPDATE List_accruals SET verified = ?, note = ? WHERE id = ?;",
+        {detail.verified, detail.note, detail.list_accrual_id});
 }
 
 void OrdersPanel::render() {
@@ -128,6 +268,8 @@ void OrdersPanel::render() {
     //    ImGui::Begin(name.c_str(), &isOpen);
     bool goBottom = false;
     bool focusFirst = false;
+    static float ordersListHeight = 240.0f;
+    static float splitterSize = 5.0f;
 
     ImGui::BeginChild(name.c_str());
 
@@ -141,6 +283,7 @@ void OrdersPanel::render() {
     if (ImGui::Button(ICON_FA_REFRESH)) {
         writeToDatabase();
         refresh();
+        refreshAccrualDetails();
         // дергаем индекс, что бы система перечитала выделенное
         oldIndex = -1;
     }
@@ -219,17 +362,35 @@ void OrdersPanel::render() {
     if (ImGui::Button(ICON_FA_LIST)) {
 
         // Добавляем пнель запроса
-        auto newPanel = std::make_unique<ReviewPanel>(
-            db,
-            "SELECT o.number || '-' || o.date AS onum, a.name, i.full_name || "
-            "'-' || p.job_title || '-' || d.division_name || '-' || e.rate || "
-            "'-' || e.contract AS fname,  printf('%.2f',l.amount), l.verified, "
-            "l.note FROM Orders o LEFT JOIN List_accruals l ON l.order_id = "
-            "o.id LEFT JOIN Accruals a ON l.accrual_id = a.id LEFT JOIN "
-            "Statements s ON s.id = l.statement_id LEFT JOIN Employees e ON "
-            "e.id=s.employee_id LEFT JOIN  Individuals i ON e.individual_id= "
-            "i.id LEFT JOIN Positions p ON e.position_id = p.id LEFT JOIN "
-            "Divisions d ON e.division_id = d.id ORDER BY onum, a.name, fname");
+	        auto newPanel = std::make_unique<ReviewPanel>(
+	            db,
+	            "SELECT o.number || '-' || o.date AS 'Приказ', "
+	            "a.name AS 'Начисление', "
+	            "i.full_name || '-' || p.job_title || '-' || d.division_name || "
+	            "'-' || e.rate || '-' || e.contract AS 'Сотрудник', "
+	            "printf('%.2f', l.amount) AS 'Сумма', "
+	            "printf('%.0f', "
+	            "CASE WHEN salary_base.amount IS NOT NULL AND salary_base.amount <> 0 "
+	            "THEN l.amount / salary_base.amount * 100 ELSE 0 END"
+	            ") AS 'Процент от оклада', "
+	            "printf('%.0f', a.percentage) AS 'Процент начисления', "
+	            "l.verified AS 'Проверено', l.note AS 'Примечание' "
+	            "FROM Orders o "
+	            "LEFT JOIN List_accruals l ON l.order_id = o.id "
+	            "LEFT JOIN Accruals a ON l.accrual_id = a.id "
+	            "LEFT JOIN Statements s ON s.id = l.statement_id "
+	            "LEFT JOIN Employees e ON e.id = s.employee_id "
+	            "LEFT JOIN Individuals i ON e.individual_id = i.id "
+	            "LEFT JOIN Positions p ON e.position_id = p.id "
+	            "LEFT JOIN Divisions d ON e.division_id = d.id "
+	            "LEFT JOIN ("
+	            "    SELECT l2.statement_id, SUM(l2.amount) AS amount "
+	            "    FROM List_accruals l2 "
+	            "    JOIN Accruals a2 ON a2.id = l2.accrual_id "
+	            "    WHERE a2.this_salary = 1 "
+	            "    GROUP BY l2.statement_id"
+	            ") salary_base ON salary_base.statement_id = l.statement_id "
+	            "ORDER BY o.number, o.date, a.name, i.full_name");
         // auto newPanel = std::make_unique<PositionsPanel>(db);
         manager_panels.addPanel(std::move(newPanel));
         manager_panels.getNextEnd() = true;
@@ -290,10 +451,16 @@ void OrdersPanel::render() {
     ImGui::Separator();
     // ImGui::PopStyleColor();
 
+    float availableHeight = ImGui::GetContentRegionAvail().y;
+    float maxOrdersListHeight = std::max(140.0f, availableHeight - 160.0f);
+    ordersListHeight =
+        std::clamp(ordersListHeight, 120.0f, maxOrdersListHeight);
+
     if (ImGui::BeginTable("Orders", 6,
                           ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
                               ImGuiTableFlags_RowBg |
-                              ImGuiTableFlags_ScrollY)) {
+                              ImGuiTableFlags_ScrollY,
+                          ImVec2(0, ordersListHeight))) {
 
         ImGui::TableSetupColumn("ID",
                                 ImGuiTableColumnFlags_WidthFixed |
@@ -320,10 +487,15 @@ void OrdersPanel::render() {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             // выделение всей    строки
+            bool isSelected = currentRecord.id == orders[i].id;
             if (ImGui::Selectable(std::to_string(orders[i].id).c_str(),
-                                  selectedIndex == i,
+                                  isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                writeToDatabase();
                 selectedIndex = i;
+                oldIndex = i;
+                currentRecord = orders[i];
+                refreshAccrualDetails();
             }
             // номер
             ImGui::TableSetColumnIndex(1);
@@ -343,21 +515,6 @@ void OrdersPanel::render() {
             ImGui::Text(
                 "%s",
                 orders[i].note.substr(0, orders[i].note.find("\n")).c_str());
-            // выделена другая строка
-            if (oldIndex != selectedIndex) {
-                // записать старые данные
-                if (writeToDatabase()) {
-                    // Обновляем строку таблицы новыми данными
-                    orders[oldIndex] = currentRecord;
-                    // printf("Запись обновлена\n");
-                }
-                // printf("старый указатель %i, новый указатель %i \n",
-                // oldIndex,
-                //        selectedEmployee);
-                // взять в редактор новые данные
-                currentRecord = orders[selectedIndex];
-                oldIndex = selectedIndex;
-            }
             // Прокручиваем к последнему элементу если выделена последняя строка
             // - для добавленной записи
             if (goBottom && i == orders.size() - 1) {
@@ -365,6 +522,91 @@ void OrdersPanel::render() {
                 goBottom = false;
             }
         }
+        ImGui::EndTable();
+    }
+
+    ImGui::Button("##OrdersDetailsSplitter", ImVec2(-1, splitterSize));
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+        ImGui::SetTooltip("Изменить высоту списка приказов");
+    }
+    if (ImGui::IsItemActive()) {
+        ordersListHeight += ImGui::GetIO().MouseDelta.y;
+        ordersListHeight =
+            std::clamp(ordersListHeight, 120.0f, maxOrdersListHeight);
+    }
+
+    ImGui::SeparatorText("Расшифровка начислений по приказу");
+    if (currentRecord.id < 0) {
+        ImGui::TextDisabled("Выберите приказ.");
+    } else if (ImGui::BeginTable(
+                   "OrderAccrualDetails", 7,
+                   ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders |
+                       ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
+                       ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti,
+                   ImVec2(0, 0))) {
+        ImGui::TableSetupColumn("ФИО", 0, 0.0f, 0);
+        ImGui::TableSetupColumn("Должность", 0, 0.0f, 1);
+        ImGui::TableSetupColumn("Месяц",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                100.0f, 2);
+        ImGui::TableSetupColumn("Начисление", 0, 0.0f, 3);
+        ImGui::TableSetupColumn("% от оклада",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                90.0f, 4);
+        ImGui::TableSetupColumn("Сверено",
+                                ImGuiTableColumnFlags_WidthFixed |
+                                    ImGuiTableColumnFlags_NoResize,
+                                70.0f, 5);
+        ImGui::TableSetupColumn("Примечание", 0, 0.0f, 6);
+        ImGui::TableHeadersRow();
+
+        sortOrderAccrualDetails(accrualDetails, ImGui::TableGetSortSpecs());
+
+        for (size_t i = 0; i < accrualDetails.size(); ++i) {
+            auto &detail = accrualDetails[i];
+            ImGui::PushID(detail.list_accrual_id);
+
+            ImGui::TableNextRow();
+            if (!detail.verified) {
+                ImGui::TableSetBgColor(
+                    ImGuiTableBgTarget_RowBg0,
+                    ImGui::GetColorU32(ImVec4(0.5f, 0.2f, 0.2f, 0.3f)));
+            }
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", detail.full_name.c_str());
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", detail.job_title.c_str());
+
+            ImGui::TableSetColumnIndex(2);
+            ImGui::Text("%s", monthName(detail.month));
+
+            ImGui::TableSetColumnIndex(3);
+            ImGui::Text("%s", detail.accrual.c_str());
+
+            ImGui::TableSetColumnIndex(4);
+            ImGui::Text("%.0f", detail.percent);
+
+            ImGui::TableSetColumnIndex(5);
+            if (ImGui::Checkbox("##verified", &detail.verified)) {
+                saveAccrualDetail(detail);
+            }
+
+            ImGui::TableSetColumnIndex(6);
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (ImGui::InputText("##note", &detail.note,
+                                 ImGuiInputTextFlags_EnterReturnsTrue) ||
+                ImGui::IsItemDeactivatedAfterEdit()) {
+                saveAccrualDetail(detail);
+            }
+
+            ImGui::PopID();
+        }
+
         ImGui::EndTable();
     }
 

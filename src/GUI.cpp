@@ -14,10 +14,11 @@
 #include "StatementsPanel.h"
 
 #include "ImGuiFileDialog.h"
-#include "PdfExporter.h"
+#include "HtmlExporter.h"
 #include "imgui_components.h"
 
 #include <charconv>
+#include <cstdint>
 #include <iostream>
 
 #include <GLFW/glfw3.h>
@@ -29,7 +30,41 @@
 #include <string>
 #include <utility>
 
+#ifdef _WIN32
+#include <shellapi.h>
+#include <windows.h>
+#else
+#include <cstdlib>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 // #include <imgui_internal.h>
+
+namespace {
+bool OpenWithDefaultApplication(const std::string &path) {
+#ifdef _WIN32
+    HINSTANCE result = ShellExecuteA(nullptr, "open", path.c_str(), nullptr,
+                                     nullptr, SW_SHOWNORMAL);
+    return reinterpret_cast<intptr_t>(result) > 32;
+#elif defined(__APPLE__)
+    pid_t pid = fork();
+    if (pid == 0) {
+        execlp("open", "open", path.c_str(), static_cast<char *>(nullptr));
+        std::_Exit(EXIT_FAILURE);
+    }
+    return pid > 0;
+#else
+    pid_t pid = fork();
+    if (pid == 0) {
+        execlp("xdg-open", "xdg-open", path.c_str(),
+               static_cast<char *>(nullptr));
+        std::_Exit(EXIT_FAILURE);
+    }
+    return pid > 0;
+#endif
+}
+} // namespace
 
 GUI::GUI(GLFWwindow *w)
     : window(w) {
@@ -322,9 +357,14 @@ void GUI::showMainMenu() {
             }
 
             ImGui::Separator();
-            if (ImGui::MenuItem(settings.darkTheme ? "> Light Theme"
-                                                   : "> Dark Theme")) {
-                settings.ToggleTheme();
+            if (ImGui::BeginMenu("Тема")) {
+                for (int i = 0; i < settings.GetThemeCount(); ++i) {
+                    if (ImGui::MenuItem(settings.GetThemeName(i), nullptr,
+                                        settings.theme == i)) {
+                        settings.SetTheme(i);
+                    }
+                }
+                ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Размер шрифта")) {
@@ -334,32 +374,41 @@ void GUI::showMainMenu() {
                 // ImGui::SetNextItemWidth(250.0f);
                 // static int current_index = settings.sizeFont;
                 static int current_index = 0;
+                static bool editing_font = false;
 
-                const float values[] = {12.0f, 14.0f, 16.0f, 18.0f,
-                                        20.0f, 22.0f, 24.0f, 26.0f,
-                                        28.f,  30.f,  32.0f};
+                const float values[] = {
+                    14.0f, 16.0f, 18.0f, 20.0f, 22.0f, 24.0f, 26.0f,
+                    28.0f, 30.0f, 32.0f, 34.0f, 36.0f, 38.0f, 40.0f,
+                    42.0f, 44.0f, 46.0f};
                 const int value_count = IM_ARRAYSIZE(values);
-                const char *labels[] = {"12", "14", "16", "18", "20", "22",
-                                        "24", "26", "28", "30", "32"};
-                // ищем индекс
-                for (int i = 0; i < IM_ARRAYSIZE(values); i++)
-                    if (values[i] == settings.sizeFont) {
-                        current_index = i;
-                        break;
-                    }
+                const char *labels[] = {"14", "16", "18", "20", "22", "24",
+                                        "26", "28", "30", "32", "34", "36",
+                                        "38", "40", "42", "44", "46"};
+                // Синхронизируем с сохраненным значением только когда слайдер не
+                // редактируется, иначе он будет прыгать и мерцать.
+                if (!editing_font) {
+                    for (int i = 0; i < IM_ARRAYSIZE(values); i++)
+                        if (values[i] == settings.sizeFont) {
+                            current_index = i;
+                            break;
+                        }
+                }
 
                 // ImGui::Text("Scale Factor:");
                 ImGui::SetNextItemWidth(200);
                 if (ImGui::SliderInt("##scale", &current_index, 0,
                                      value_count - 1, labels[current_index])) {
+                    editing_font = true;
+                }
+
+                if (ImGui::IsItemDeactivatedAfterEdit()) {
+                    editing_font = false;
                     settings.sizeFont = values[current_index];
                     settings.needLoadFonts = true;
                     settings.Save();
-                    // просто извещаем о необходимой перегрузке - динамически не
-                    // вышло
                     g_MessageLog.Add("Изменен размер шрифта: " +
                                      std::to_string(settings.sizeFont) +
-                                     " Перегрузите приложение!");
+                                     ". Применяется без перезапуска.");
                 }
 
                 ImGui::EndMenu();
@@ -792,16 +841,29 @@ void GUI::ShowAbout() {
 }
 
 void GUI::PdfReportListEmployees() {
-    // auto data = db.FetchAll("SELECT * FROM users");
-    // PdfExporter exporter;
-    // exporter.ExportToPdf(data, "report.pdf");
+    HtmlExporter exporter = HtmlExporter(
+        db, "SELECT e.id AS 'ID', i.full_name AS 'ФИО', "
+            "p.job_title AS 'Должность', e.rate AS 'Ставка', "
+            "d.division_name AS 'Подразделение', e.contract AS 'Договор', "
+            "e.contract_found AS 'Договор найден', "
+            "e.certificate_found AS 'Справка найдена', e.note AS 'Примечание' "
+            "FROM Employees e "
+            "LEFT JOIN Individuals i ON e.individual_id = i.id "
+            "LEFT JOIN Positions p ON e.position_id = p.id "
+            "LEFT JOIN Divisions d ON e.division_id = d.id");
 
-    PdfExporter exporter = PdfExporter(
-        db, "SELECT e.id, i.full_name, p.job_title, e.rate, d.division_name, "
-            "e.contract, e.contract_found, e.certificate_found, e.note FROM  "
-            "Employees e LEFT JOIN Individuals i ON e.individual_id = i.id "
-            "LEFT JOIN Positions p ON e.position_id = p.id LEFT JOIN Divisions "
-            "d ON e.division_id = d.id");
-    exporter.GeneratePDFListEmployees("ListEmployees.pdf");
-    exporter.OpenPDF("ListEmployees.pdf");
+    const std::string filename = "ListEmployees.html";
+    if (exporter.GenerateEmployeesReport(filename)) {
+        if (OpenWithDefaultApplication(filename)) {
+            g_MessageLog.Add("HTML-отчет сохранен и открыт: " + filename,
+                             ImVec4(0.3, 0.6, 0.3, 1));
+        } else {
+            g_MessageLog.Add("HTML-отчет сохранен, но не удалось открыть: " +
+                                 filename,
+                             ImVec4(0.6, 0.45, 0.2, 1));
+        }
+    } else {
+        g_MessageLog.Add("Не удалось сохранить HTML-отчет: " + filename,
+                         ImVec4(0.6, 0.3, 0.3, 1));
+    }
 }

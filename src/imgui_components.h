@@ -40,6 +40,15 @@ struct ComboItem {
         std::string name;
 };
 
+template <typename T> int FindIndexById(const std::vector<T> &items, int id) {
+    auto it = std::find_if(items.begin(), items.end(),
+                           [id](const T &item) { return item.id == id; });
+    if (it == items.end())
+        return -1;
+
+    return static_cast<int>(std::distance(items.begin(), it));
+}
+
 // комбобока с фильтом и подстановкой
 bool ComboWithFilter(const char *label, int &current_id,
                      std::vector<ComboItem> &items, ImGuiComboFlags flags = 0);

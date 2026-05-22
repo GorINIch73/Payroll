@@ -1,17 +1,24 @@
 #pragma once
 #include <sqlite3.h>
-#include <string>
-#include <vector>
+#include <cstddef>
 #include <map>
+#include <string>
+#include <variant>
+#include <vector>
 
 class Database {
     public:
+        using SqlValue =
+            std::variant<std::nullptr_t, int, double, std::string, bool>;
+
         Database();
         ~Database();
 
         bool Open(const std::string &Path);
         void Close();
         bool Execute(const std::string &sql);
+        bool ExecutePrepared(const std::string &sql,
+                             const std::vector<SqlValue> &params = {});
         bool CreateNewDatabase();
         bool tableExists(const std::string &tableName);
         int CopyDatabase(const std::string &dest_path);
