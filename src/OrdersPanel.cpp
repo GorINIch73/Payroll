@@ -102,7 +102,10 @@ bool OrdersPanel::writeToDatabase() {
         // std::cout << sql << std::endl;
 
         printf("Обновление записи ... \n");
-        return db.Execute(sql);
+        const bool saved = db.Execute(sql);
+        if (saved)
+            UpdateItemById(orders, currentRecord);
+        return saved;
     }
 
     return false;
@@ -296,12 +299,17 @@ void OrdersPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
     if (ImGui::Button(ICON_FA_PLUS)) {
-        addRecord();
-        refresh();
-        // прыгвем на последнюю запись
-        selectedIndex = orders.size() - 1;
-        goBottom = true;
-        focusFirst = true;
+        writeToDatabase();
+        if (addRecord()) {
+            const int newId =
+                static_cast<int>(sqlite3_last_insert_rowid(db.getHandle()));
+            refresh();
+            SelectItemById(orders, newId, currentRecord, selectedIndex);
+            oldIndex = selectedIndex;
+            refreshAccrualDetails();
+            goBottom = true;
+            focusFirst = true;
+        }
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Добавить новый приказ");
@@ -491,10 +499,11 @@ void OrdersPanel::render() {
             if (ImGui::Selectable(std::to_string(orders[i].id).c_str(),
                                   isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                const int selectedId = orders[i].id;
                 writeToDatabase();
-                selectedIndex = i;
-                oldIndex = i;
-                currentRecord = orders[i];
+                SelectItemById(orders, selectedId, currentRecord,
+                               selectedIndex);
+                oldIndex = selectedIndex;
                 refreshAccrualDetails();
             }
             // номер

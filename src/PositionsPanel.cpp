@@ -39,7 +39,10 @@ bool PositionsPanel::writeToDatabase() {
         // std::cout << sql << std::endl;
 
         printf("Обновление записи ... \n");
-        return db.Execute(sql);
+        const bool saved = db.Execute(sql);
+        if (saved)
+            UpdateItemById(positions, currentRecord);
+        return saved;
     }
 
     return false;
@@ -147,12 +150,16 @@ void PositionsPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
     if (ImGui::Button(ICON_FA_PLUS)) {
-        addRecord();
-        refresh();
-        // прыгвем на последнюю запись
-        selectedIndex = positions.size() - 1;
-        goBottom = true;
-        focusFirst = true;
+        writeToDatabase();
+        if (addRecord()) {
+            const int newId =
+                static_cast<int>(sqlite3_last_insert_rowid(db.getHandle()));
+            refresh();
+            SelectItemById(positions, newId, currentRecord, selectedIndex);
+            oldIndex = selectedIndex;
+            goBottom = true;
+            focusFirst = true;
+        }
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Добавить новую должность");
@@ -330,10 +337,11 @@ void PositionsPanel::render() {
             if (ImGui::Selectable(std::to_string(positions[i].id).c_str(),
                                   isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                const int selectedId = positions[i].id;
                 writeToDatabase();
-                selectedIndex = i;
-                oldIndex = i;
-                currentRecord = positions[i];
+                SelectItemById(positions, selectedId, currentRecord,
+                               selectedIndex);
+                oldIndex = selectedIndex;
             }
 
             ImGui::TableSetColumnIndex(1);

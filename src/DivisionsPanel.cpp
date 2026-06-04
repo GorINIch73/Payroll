@@ -26,10 +26,13 @@ DivisionsPanel::~DivisionsPanel() { writeToDatabase(); }
 bool DivisionsPanel::writeToDatabase() {
     // Созранение записи из редактора с проверкой изменения
     if (isCurrentChanged()) {
-        return db.ExecutePrepared(
+        const bool saved = db.ExecutePrepared(
             "UPDATE Divisions SET division_name = ?, note = ? WHERE id = ?;",
             {currentRecord.division_name, currentRecord.note,
              currentRecord.id});
+        if (saved)
+            UpdateItemById(divisions, currentRecord);
+        return saved;
     }
 
     return false;
@@ -126,12 +129,16 @@ void DivisionsPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
     if (ImGui::Button(ICON_FA_PLUS)) {
-        addRecord();
-        refresh();
-        // прыгвем на последнюю запись
-        selectedIndex = divisions.size() - 1;
-        goBottom = true;
-        focusFirst = true;
+        writeToDatabase();
+        if (addRecord()) {
+            const int newId =
+                static_cast<int>(sqlite3_last_insert_rowid(db.getHandle()));
+            refresh();
+            SelectItemById(divisions, newId, currentRecord, selectedIndex);
+            oldIndex = selectedIndex;
+            goBottom = true;
+            focusFirst = true;
+        }
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Добавить новое отделение");
@@ -247,10 +254,11 @@ void DivisionsPanel::render() {
             if (ImGui::Selectable(std::to_string(divisions[i].id).c_str(),
                                   isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                const int selectedId = divisions[i].id;
                 writeToDatabase();
-                selectedIndex = i;
-                oldIndex = i;
-                currentRecord = divisions[i];
+                SelectItemById(divisions, selectedId, currentRecord,
+                               selectedIndex);
+                oldIndex = selectedIndex;
             }
 
             ImGui::TableSetColumnIndex(1);

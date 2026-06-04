@@ -116,10 +116,10 @@ bool EmployeesPanel::writeToDatabase() {
         // std::cout << currentRecord.note << std::endl;
         // std::cout << sql << std::endl;
         if (db.Execute(sql)) {
-
             // обновляем запись в таблице пока что полным обновлением
             refresh();
-        };
+            return true;
+        }
         return false;
     }
 
@@ -316,12 +316,16 @@ void EmployeesPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
     if (ImGui::Button(ICON_FA_PLUS)) {
-        addRecord();
-        refresh();
-        // прыгвем на последнюю запись
-        selectedIndex = employees.size() - 1;
-        goBottom = true;
-        focusFirst = true;
+        writeToDatabase();
+        if (addRecord()) {
+            const int newId =
+                static_cast<int>(sqlite3_last_insert_rowid(db.getHandle()));
+            refresh();
+            SelectItemById(employees, newId, currentRecord, selectedIndex);
+            oldIndex = selectedIndex;
+            goBottom = true;
+            focusFirst = true;
+        }
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Добавить нового сотрудника");
@@ -618,10 +622,11 @@ void EmployeesPanel::render() {
             if (ImGui::Selectable(std::to_string(employees[i].id).c_str(),
                                   isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                const int selectedId = employees[i].id;
                 writeToDatabase();
-                selectedIndex = i;
-                oldIndex = i;
-                currentRecord = employees[i];
+                SelectItemById(employees, selectedId, currentRecord,
+                               selectedIndex);
+                oldIndex = selectedIndex;
             }
 
             // ФИО

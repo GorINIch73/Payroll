@@ -42,7 +42,10 @@ bool AccrualsPanel::writeToDatabase() {
         // std::cout << sql << std::endl;
 
         // printf("Обновление записи ... \n");
-        return db.Execute(sql);
+        const bool saved = db.Execute(sql);
+        if (saved)
+            UpdateItemById(accruals, currentRecord);
+        return saved;
     }
 
     return false;
@@ -153,12 +156,16 @@ void AccrualsPanel::render() {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.2f, 0.7f, 0.2f, 0.6f)); // Зеленый
     if (ImGui::Button(ICON_FA_PLUS)) {
-        addRecord();
-        refresh();
-        // прыгвем на последнюю запись
-        selectedIndex = accruals.size() - 1;
-        goBottom = true;
-        focusFirst = true;
+        writeToDatabase();
+        if (addRecord()) {
+            const int newId =
+                static_cast<int>(sqlite3_last_insert_rowid(db.getHandle()));
+            refresh();
+            SelectItemById(accruals, newId, currentRecord, selectedIndex);
+            oldIndex = selectedIndex;
+            goBottom = true;
+            focusFirst = true;
+        }
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Добавить новое начисление");
@@ -328,10 +335,11 @@ void AccrualsPanel::render() {
             if (ImGui::Selectable(std::to_string(accruals[i].id).c_str(),
                                   isSelected,
                                   ImGuiSelectableFlags_SpanAllColumns)) {
+                const int selectedId = accruals[i].id;
                 writeToDatabase();
-                selectedIndex = i;
-                oldIndex = i;
-                currentRecord = accruals[i];
+                SelectItemById(accruals, selectedId, currentRecord,
+                               selectedIndex);
+                oldIndex = selectedIndex;
             }
 
             ImGui::TableSetColumnIndex(1);

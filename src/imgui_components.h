@@ -49,6 +49,27 @@ template <typename T> int FindIndexById(const std::vector<T> &items, int id) {
     return static_cast<int>(std::distance(items.begin(), it));
 }
 
+template <typename T>
+bool SelectItemById(const std::vector<T> &items, int id, T &currentItem,
+                    int &selectedIndex) {
+    selectedIndex = FindIndexById(items, id);
+    if (selectedIndex < 0)
+        return false;
+
+    currentItem = items[selectedIndex];
+    return true;
+}
+
+template <typename T>
+bool UpdateItemById(std::vector<T> &items, const T &currentItem) {
+    const int index = FindIndexById(items, currentItem.id);
+    if (index < 0)
+        return false;
+
+    items[index] = currentItem;
+    return true;
+}
+
 // комбобока с фильтом и подстановкой
 bool ComboWithFilter(const char *label, int &current_id,
                      std::vector<ComboItem> &items, ImGuiComboFlags flags = 0);
