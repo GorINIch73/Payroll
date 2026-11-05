@@ -20,6 +20,28 @@
 
 #include <sstream>
 
+namespace {
+
+std::string EscapeTsvField(const std::string &value) {
+    if (value.find_first_of("\t\r\n\"") == std::string::npos) {
+        return value;
+    }
+
+    std::string escaped;
+    escaped.reserve(value.size() + 2);
+    escaped.push_back('"');
+    for (const char character : value) {
+        if (character == '"') {
+            escaped.push_back('"');
+        }
+        escaped.push_back(character);
+    }
+    escaped.push_back('"');
+    return escaped;
+}
+
+} // namespace
+
 // #define CLIP_WIC_SUPPORT false
 // #define CLIP_ENABLE_IMAGE false
 // #include <clip.h>
@@ -76,11 +98,16 @@ void ReviewPanel::refresh() {
 // Функция для копирования выделенных данных в буфер обмена
 void ReviewPanel::CopySelectionToClipboard() {
 
+    if (data.empty()) {
+        return;
+    }
+
     int min_col, max_col, min_row, max_row;
     // если выделена только одна ячейка
     if (selection_start.x != -1 && selection_end.x == -1) {
-        ImGui::SetClipboardText(
-            data[selection_start.y].columns[selection_start.x].c_str());
+        const std::string clipboard_text = EscapeTsvField(
+            data[selection_start.y].columns[selection_start.x]);
+        ImGui::SetClipboardText(clipboard_text.c_str());
         return;
     }
 
@@ -106,7 +133,7 @@ void ReviewPanel::CopySelectionToClipboard() {
     for (int row = min_row; row <= max_row; ++row) {
         for (int col = min_col; col <= max_col; ++col) {
             // Добавляем значение ячейки
-            clipboard_text << data[row].columns[col];
+            clipboard_text << EscapeTsvField(data[row].columns[col]);
 
             // Добавляем табуляцию (кроме последнего столбца)
             if (col < max_col) {

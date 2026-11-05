@@ -825,13 +825,45 @@ void GUI::ShowAbout() {
     if (!showAbout)
         return;
 
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing,
+                            ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(430.0f, 0.0f), ImGuiCond_Appearing);
     ImGui::OpenPopup("About");
     if (ImGui::BeginPopupModal("About", NULL,
-                               ImGuiWindowFlags_NoMove |
-                                   ImGuiWindowFlags_AlwaysAutoResize)) {
+                               ImGuiWindowFlags_AlwaysAutoResize |
+                                   ImGuiWindowFlags_NoSavedSettings)) {
+        ImGui::Spacing();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.78f, 0.95f, 1.0f));
+        ImGui::TextUnformatted("Payroll");
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::TextDisabled("Аудит начисления заработной платы");
+        ImGui::Separator();
+        ImGui::Spacing();
 
-        ImGui::Text("GorINIch`tm 2025 \n ggroinich@gmail.com");
-        if (ImGui::Button("Закрыть")) {
+        ImGui::Text("Автор");
+        ImGui::SameLine(160.0f);
+        ImGui::TextUnformatted("GorINIch");
+        ImGui::Text("Связаться");
+        ImGui::SameLine(160.0f);
+        ImGui::TextLinkOpenURL("ggroinich@gmail.com",
+                               "mailto:ggroinich@gmail.com");
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text("Сборка");
+        ImGui::SameLine(160.0f);
+#ifndef PAYROLL_BUILD_NUMBER
+#define PAYROLL_BUILD_NUMBER "0"
+#endif
+        ImGui::Text("№ %s", PAYROLL_BUILD_NUMBER);
+        ImGui::Text("Дата компиляции");
+        ImGui::SameLine(160.0f);
+        ImGui::TextUnformatted(__DATE__);
+        ImGui::Spacing();
+
+        if (ImGui::Button("Закрыть", ImVec2(-FLT_MIN, 0.0f))) {
             ImGui::CloseCurrentPopup();
             showAbout = false;
         }

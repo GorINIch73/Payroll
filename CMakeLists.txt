@@ -1,6 +1,21 @@
 cmake_minimum_required(VERSION 3.20)
 project(Payroll)
 
+# Номер сборки соответствует количеству коммитов в текущей истории Git.
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-list --count HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE PAYROLL_BUILD_NUMBER
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+endif()
+if(NOT PAYROLL_BUILD_NUMBER MATCHES "^[0-9]+$")
+    set(PAYROLL_BUILD_NUMBER "0")
+endif()
+
 include(GNUInstallDirs)
 
 # Настройка стандарта C++
@@ -171,6 +186,10 @@ target_link_libraries(Payroll PRIVATE
     sqlite3
     # clip 
     ${OPENGL_LIBRARIES}
+)
+
+target_compile_definitions(Payroll PRIVATE
+    PAYROLL_BUILD_NUMBER="${PAYROLL_BUILD_NUMBER}"
 )
 
 if(WIN32)
